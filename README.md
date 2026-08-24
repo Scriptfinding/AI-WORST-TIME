@@ -11,28 +11,21 @@ Puppetflow is a self-hosted browser automation platform for writing, running, sc
 <div align="center">
   <h3>Install Puppetflow in seconds</h3>
   <p><code>curl -fsSL https://puppetflow.com/install.sh | bash</code></p>
-  <h3>Puppetflow in 100 seconds</h3>
-  <a href="https://www.youtube.com/watch?v=0TNsKNjcg6U">
-    <img src="https://img.youtube.com/vi/0TNsKNjcg6U/maxresdefault.jpg" width="720" alt="Watch Puppetflow in 100 seconds on YouTube" />
-  </a>
-  <p><a href="https://www.youtube.com/watch?v=0TNsKNjcg6U">▶ Watch on YouTube</a></p>
 </div>
 
 ---
 
 ## Puppetflow in action
 
-<p align="center">
-  <img src="https://www.puppetflow.com/img/captures/cap2.png" width="100%" alt="Puppetflow visual flow builder" />
-</p>
-
-<p align="center">
-  <img src="https://www.puppetflow.com/img/captures/cap1.png" width="100%" alt="Puppetflow run details with browser recording, logs, and action timeline" />
-</p>
-
-<p align="center">
-  <img src="https://www.puppetflow.com/img/captures/cap3.png" width="100%" alt="Puppetflow integrations with messaging, AI, vault, and Git providers" />
-</p>
+<div align="center">
+  <img src="docs/img/cap2.png" width="49%" alt="Puppetflow visual flow builder" />
+  <img src="docs/img/cap1.png" width="49%" alt="Puppetflow run details with browser recording, logs, and action timeline" />
+  <br />
+  <img src="docs/img/cap3.png" width="49%" alt="Puppetflow integrations with messaging, AI, vault, and Git providers" />
+  <a href="https://www.youtube.com/watch?v=0TNsKNjcg6U">
+    <img src="https://img.youtube.com/vi/0TNsKNjcg6U/maxresdefault.jpg" width="49%" alt="Watch Puppetflow in 100 seconds on YouTube" />
+  </a>
+</div>
 
 ## 🌐 Website and documentation
 
