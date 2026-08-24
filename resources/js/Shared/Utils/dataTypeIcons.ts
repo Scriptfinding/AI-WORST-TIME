@@ -1,0 +1,17 @@
+export const DATA_TYPE_ICONS = {
+    string: 'lucide:type',
+    text: 'lucide:type',
+    number: 'lucide:hash',
+    dateTime: 'lucide:calendar-clock',
+    boolean: 'lucide:toggle-left',
+    array: 'lucide:brackets',
+    object: 'lucide:braces',
+    null: 'lucide:circle-slash-2',
+    variable: 'lucide:variable',
+    channel: 'lucide:bell',
+    'mailbox-watcher': 'lucide:mail-search',
+    'ai-model': 'lucide:sparkles',
+    secret: 'lucide:key-round',
+    otp: 'lucide:shield-keyhole',
+    vault: 'lucide:vault',
+} as const;

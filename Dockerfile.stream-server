@@ -1,0 +1,39 @@
+# ============================================================
+# BASE: lightweight Node 20 Alpine
+# ============================================================
+
+FROM node:20-alpine AS base
+
+WORKDIR /app
+
+# ============================================================
+# DEV: full source mount, nodemon-friendly
+# ============================================================
+FROM base AS dev
+
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
+
+COPY src/stream-server.js src/stream-server-config.js src/
+
+EXPOSE 6080
+
+CMD ["node", "--watch", "src/stream-server.js"]
+
+# ============================================================
+# PROD: minimal production image
+# ============================================================
+FROM base AS prod
+
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts --omit=dev && npm cache clean --force
+
+COPY src/stream-server.js src/stream-server-config.js src/
+
+RUN addgroup -S -g 10001 stream \
+    && adduser -S -D -H -u 10001 -G stream stream
+USER stream
+
+EXPOSE 6080
+
+CMD ["node", "src/stream-server.js"]

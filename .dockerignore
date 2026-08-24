@@ -1,0 +1,36 @@
+# Node
+/node_modules
+
+.git
+
+# Puppeteer runner data
+/data/*
+/src/flows/*
+
+# Laravel
+/vendor
+/public/hot
+/public/storage
+/public/build
+/storage/*.key
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/bootstrap/cache/*
+
+# Environment
+.env
+.env.backup
+.env.production
+
+# Database
+/database/database.sqlite
+/database/seeders/LocalSeeder.php
+
+# IDE
+.DS_Store
+*.log
+.idea
+.vscode
+*.swp
+*.swo

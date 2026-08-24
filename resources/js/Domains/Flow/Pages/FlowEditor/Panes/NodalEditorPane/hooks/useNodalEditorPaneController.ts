@@ -1,0 +1,107 @@
+import type { NodalEditorPaneProps } from '../NodalEditorPane.types';
+import { useNodalCanvasController } from './useNodalCanvasController';
+import { useNodalGraphController } from './useNodalGraphController';
+import { useNodalInteractionsController } from './useNodalInteractionsController';
+
+// Composes graph and interaction state into the controller consumed by NodalEditorPane.
+export function useNodalEditorPaneController({
+    flow,
+    graph,
+    graphContext = 'flow',
+    functionArguments,
+    graphRevision,
+    onGraphChange,
+    latestRun = null,
+    readOnly = false,
+    allowShortcutsInModal = false,
+    runProgress = null,
+    onRun,
+}: NodalEditorPaneProps) {
+    const graphController = useNodalGraphController({
+        graph,
+        graphContext,
+        functionArguments,
+        graphRevision,
+        onGraphChange,
+        readOnly,
+    });
+    const interactionsController = useNodalInteractionsController({
+        allowShortcutsInModal,
+        flow,
+        graphContext,
+        graphController,
+    });
+    const canvasController = useNodalCanvasController({
+        graphController,
+        interactionsController,
+    });
+
+    return {
+        activeCategoryKey: graphController.activeCategoryKey,
+        addNode: interactionsController.addNode,
+        addStickyNote: interactionsController.addStickyNote,
+        canvasMode: graphController.canvasMode,
+        canvasRef: graphController.canvasRef,
+        canvasViewActions: canvasController.canvasViewActions,
+        canCopySelection: canvasController.canCopySelection,
+        canPasteNodes: interactionsController.canPasteNodes,
+        canSwapSelection: canvasController.canSwapSelection,
+        connectionDrag: graphController.connectionDrag,
+        contextMenu: graphController.contextMenu,
+        currentGraph: graphController.currentGraph,
+        contextNode: canvasController.contextNode,
+        copySelectedNodes: interactionsController.copySelectedNodes,
+        deleteNodes: interactionsController.deleteNodes,
+        duplicateNode: interactionsController.duplicateNode,
+        duplicateSelectedNodes: interactionsController.duplicateSelectedNodes,
+        edgeDropTarget: graphController.edgeDropTarget,
+        editingAutocompleteContext: interactionsController.editingAutocompleteContext,
+        editingConnectedNodes: interactionsController.editingConnectedNodes,
+        editingCurrentSiteUrl: interactionsController.editingCurrentSiteUrl,
+        editingNodeCurrent: interactionsController.editingNodeCurrent,
+        editingNodeIsFinally: interactionsController.editingNodeIsFinally,
+        editingStickyNoteId: graphController.editingStickyNoteId,
+        edges: graphController.edges,
+        generatedCode: graphController.generatedCode,
+        handleAuxClick: interactionsController.handleAuxClick,
+        handleContextMenu: interactionsController.handleContextMenu,
+        handleNodePointerDown: interactionsController.handleNodePointerDown,
+        handlePointerDown: interactionsController.handlePointerDown,
+        handlePointerMove: interactionsController.handlePointerMove,
+        handlePointerUp: interactionsController.handlePointerUp,
+        handlePortPointerDown: interactionsController.handlePortPointerDown,
+        handleWheel: interactionsController.handleWheel,
+        knifeDrag: graphController.knifeDrag,
+        latestRun,
+        miniMapFading: graphController.miniMapFading,
+        nodes: graphController.nodes,
+        onRun,
+        openNodeMenuId: graphController.openNodeMenuId,
+        pasteNodesFromClipboard: interactionsController.pasteNodesFromClipboard,
+        pendingConnectionTarget: graphController.pendingConnectionTarget,
+        pendingEdgeInsertion: graphController.pendingEdgeInsertion,
+        pickerOpen: graphController.pickerOpen,
+        readOnly,
+        renameNode: interactionsController.renameNode,
+        resolvedTheme: graphController.resolvedTheme,
+        runProgress,
+        search: graphController.search,
+        selectedEditableNodes: canvasController.selectedEditableNodes,
+        selectedNodeIds: graphController.selectedNodeIds,
+        selectionBox: graphController.selectionBox,
+        setEditingNode: graphController.setEditingNode,
+        setSearch: graphController.setSearch,
+        setViewport: graphController.setViewport,
+        showMiniMap: graphController.showMiniMap,
+        swapSelectedNodes: interactionsController.swapSelectedNodes,
+        toggleNodeDeactivation: interactionsController.toggleNodeDeactivation,
+        toggleNodeOrSelectionDeactivation: interactionsController.toggleNodeOrSelectionDeactivation,
+        updateNodeValue: interactionsController.updateNodeValue,
+        updateStickyNote: interactionsController.updateStickyNote,
+        viewport: graphController.viewport,
+        visibleEntries: graphController.visibleEntries,
+        flow,
+    };
+}
+
+export type NodalEditorPaneController = ReturnType<typeof useNodalEditorPaneController>;

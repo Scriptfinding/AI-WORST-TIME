@@ -1,0 +1,22 @@
+# Lecture de la version actuelle à partir du fichier version.txt
+CURRENT_VERSION=$(cat version.txt)
+
+# Vérification si la version est de la forme X.X ou X.X.X
+if [[ $CURRENT_VERSION =~ ^[0-9]+\.[0-9]+$ ]]; then
+  # Si la version est de la forme X.X
+  major=$(echo $CURRENT_VERSION | cut -d '.' -f1)
+  minor=$(echo $CURRENT_VERSION | cut -d '.' -f2)
+  NEW_RELEASE_TAG="${major}.$((minor + 1))"
+elif [[ $CURRENT_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  # Si la version est de la forme X.X.X
+  major=$(echo $CURRENT_VERSION | cut -d '.' -f1)
+  minor=$(echo $CURRENT_VERSION | cut -d '.' -f2)
+  patch=$(echo $CURRENT_VERSION | cut -d '.' -f3)
+  NEW_RELEASE_TAG="${major}.${minor}.$((patch + 1))"
+else
+  # Si la version n'est pas de la forme attendue (par exemple, 1 ou autre)
+  NEW_RELEASE_TAG="$(( ${CURRENT_VERSION} + 1 ))"
+fi
+
+# Mise à jour de la version dans le fichier version.txt
+echo $NEW_RELEASE_TAG > version.txt

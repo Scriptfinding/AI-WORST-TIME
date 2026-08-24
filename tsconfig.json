@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "jsx": "react-jsx",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["resources/js/*"],
+            "@proprietary/*": ["proprietary/resources/js/*"]
+        },
+        "types": ["node", "vite/client"]
+    },
+    "include": ["resources/js/**/*", "proprietary/resources/js/**/*"],
+    "exclude": ["node_modules", "vendor"]
+}

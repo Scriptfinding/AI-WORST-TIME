@@ -1,0 +1,230 @@
+services:
+  # ── Database migrations (one-shot startup job) ──
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: puppetflow-migrate
+    restart: "no"
+    command: ["php", "artisan", "migrate", "--force"]
+    volumes:
+      - .:/app
+      - /app/vendor
+      - /app/node_modules
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── App (Laravel server) ──
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: puppetflow-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - /app/vendor
+      - /app/node_modules
+    env_file:
+      - .env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      pinokio:
+        condition: service_started
+      stream-server:
+        condition: service_started
+
+  # ── Queue worker 1 ──
+  queue-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: puppetflow-queue-1
+    restart: unless-stopped
+    command: ["php", "artisan", "queue:work", "--queue=1", "--tries=1", "--timeout=630", "--sleep=3"]
+    volumes:
+      - .:/app
+      - /app/vendor
+      - /app/node_modules
+    env_file:
+      - .env
+    environment:
+      BROWSER_STREAM_INTERNAL_URL: "http://stream-server:6080"
+      RUNNER_API_INTERNAL_URL: "http://app:8000/api/internal/runner"
+    depends_on:
+      - app
+
+  # ── Queue worker 2 ──
+  queue-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: puppetflow-queue-2
+    restart: unless-stopped
+    command: ["php", "artisan", "queue:work", "--queue=2", "--tries=1", "--timeout=630", "--sleep=3"]
+    volumes:
+      - .:/app
+      - /app/vendor
+      - /app/node_modules
+    env_file:
+      - .env
+    environment:
+      BROWSER_STREAM_INTERNAL_URL: "http://stream-server:6080"
+      RUNNER_API_INTERNAL_URL: "http://app:8000/api/internal/runner"
+    depends_on:
+      - app
+
+  # ── Scheduler ──
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: puppetflow-scheduler
+    restart: unless-stopped
+    command: ["php", "artisan", "schedule:work"]
+    volumes:
+      - .:/app
+      - /app/vendor
+      - /app/node_modules
+    env_file:
+      - .env
+    depends_on:
+      - app
+
+  # ── Vite HMR ──
+  vite:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: puppetflow-vite
+    restart: unless-stopped
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/vendor
+      - /app/node_modules
+    environment:
+      LARAVEL_BYPASS_ENV_CHECK: "1"
+    depends_on:
+      - app
+
+  # ── Browser Stream Server ──
+  stream-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.stream-server
+      target: dev
+    container_name: puppetflow-stream
+    restart: unless-stopped
+    stop_grace_period: 30s
+    ports:
+      - "6080:6080"
+    volumes:
+      - ./src/stream-server.js:/app/src/stream-server.js
+      - ./src/stream-server-config.js:/app/src/stream-server-config.js
+      - ./package.json:/app/package.json
+      - ./package-lock.json:/app/package-lock.json
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ── Pinokio (Chromium gateway) ──
+  pinokio:
+    build:
+      context: ../pinokio
+    container_name: pinokio
+    restart: unless-stopped
+    ports:
+      - "3100:3000"
+    # Chromium uses /dev/shm for rendering buffers; the Docker default of
+    # 64 MB makes tabs crash under load.
+    shm_size: "1gb"
+    volumes:
+      - ./data/execution:/app/data/execution
+    environment:
+      HOST: "0.0.0.0"
+      PORT: 3000
+      TOKEN: "${PINOKIO_TOKEN:-}"
+      TZ: "Europe/Paris"
+      LANGUAGE: "fr-FR"
+
+  # ── PostgreSQL ──
+  postgres:
+    image: postgres:17-alpine
+    container_name: puppetflow-postgres
+    restart: unless-stopped
+    ports:
+      - "5130:5432"
+    volumes:
+      - puppetflow-db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: "${DB_DATABASE:-puppetflow}"
+      POSTGRES_USER: "${DB_USERNAME:-puppetflow}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD must be configured}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Mailbox SMTP Server ──
+  mailbox-smtp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: puppetflow-mailbox-smtp
+    restart: unless-stopped
+    command: ["php", "artisan", "mailbox:serve", "--port=2525"]
+    ports:
+      - "2525:2525"
+    volumes:
+      - .:/app
+      - /app/vendor
+      - /app/node_modules
+    env_file:
+      - .env
+    depends_on:
+      - app
+
+  # ── Browser stream broker ──
+  redis:
+    image: redis:8-alpine
+    container_name: puppetflow-redis
+    restart: unless-stopped
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        if [ -n "$${REDIS_PASSWORD:-}" ] && [ "$${REDIS_PASSWORD}" != "null" ]; then
+          exec redis-server --save "" --appendonly no --requirepass "$${REDIS_PASSWORD}"
+        fi
+        exec redis-server --save "" --appendonly no
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD:-}"
+    healthcheck:
+      test: ["CMD-SHELL", "if [ -n \"$$REDIS_PASSWORD\" ] && [ \"$$REDIS_PASSWORD\" != \"null\" ]; then redis-cli --no-auth-warning -a \"$$REDIS_PASSWORD\" ping; else redis-cli ping; fi"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  puppetflow-db:
