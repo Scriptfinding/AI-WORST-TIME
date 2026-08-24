@@ -18,11 +18,13 @@ Puppetflow is a self-hosted browser automation platform for writing, running, sc
 ## Puppetflow in action
 
 <div align="center">
-  <img src="docs/img/cap2.png" width="49%" alt="Puppetflow visual flow builder" />
-  <img src="docs/img/cap1.png" width="49%" alt="Puppetflow run details with browser recording, logs, and action timeline" />
+  <img src="docs/img/cap2.png" width="100%" alt="Puppetflow visual flow builder" />
   <br />
-  <img src="docs/img/cap3.png" width="49%" alt="Puppetflow integrations with messaging, AI, vault, and Git providers" />
-  <img src="docs/img/cap4.png" width="49%" alt="Puppetflow flow explorer showing folders and published browser automation flows" />
+  <img src="docs/img/cap1.png" width="100%" alt="Puppetflow run details with browser recording, logs, and action timeline" />
+  <br />
+  <img src="docs/img/cap3.png" width="100%" alt="Puppetflow integrations with messaging, AI, vault, and Git providers" />
+  <br />
+  <img src="docs/img/cap4.png" width="100%" alt="Puppetflow flow explorer showing folders and published browser automation flows" />
 </div>
 
 ## 🌐 Website and documentation
