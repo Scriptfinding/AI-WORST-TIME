@@ -6,6 +6,7 @@ import { useConfirm } from '@/Shared/Hooks/useConfirm';
 import BulkDeleteConfirmation from '@/Shared/UI/BulkDeleteConfirmation/BulkDeleteConfirmation';
 import { useAuth } from '@/App/Hooks/usePageProps';
 import type { MailboxItem } from '@/Domains/Mailbox/types';
+import { IntegrationCreationProvider } from '@/Domains/Integration/Contexts/IntegrationCreationContext';
 import type { PageProps } from '@/App/types';
 import MailboxesView from './Mailboxes/MailboxesView';
 import { useBulkEmailSelection } from './Mailboxes/useBulkEmailSelection';
@@ -112,6 +113,11 @@ export default function Mailboxes({
     }, [emailState, navigation]);
 
     return (
+        <IntegrationCreationProvider
+            teams={teams}
+            enabled={isAdmin}
+            mailboxReloadKeys={['domains', 'integrations']}
+        >
         <MailboxesView
             domains={domains}
             integrations={integrations}
@@ -132,5 +138,6 @@ export default function Mailboxes({
             onSelectMailbox={handleSelectMailbox}
             onBackToMailboxes={handleBackToMailboxes}
         />
+        </IntegrationCreationProvider>
     );
 }

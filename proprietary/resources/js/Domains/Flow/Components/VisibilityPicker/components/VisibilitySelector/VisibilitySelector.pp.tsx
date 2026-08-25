@@ -1,4 +1,5 @@
 import { Icon } from '@/Shared/UI/Icon/Icon';
+import FeaturePromotionTooltip from '@/Domains/Licensing/Components/FeatureFlags/FeaturePromotionTooltip/FeaturePromotionTooltip';
 import { useTheme } from 'styled-components';
 import type { Visibility } from '@proprietary/Domains/Flow/Components/VisibilityPicker/types.pp';
 import * as S from './styled.pp';
@@ -8,6 +9,7 @@ interface Props {
     teamsEnabled: boolean;
     workspaceSharingEnabled: boolean;
     showDisabledFeatures: boolean;
+    disabledFeatureMessage: string;
     disabled?: boolean;
     onChange: (visibility: Visibility) => void;
 }
@@ -26,6 +28,7 @@ export default function VisibilitySelector({
     teamsEnabled,
     workspaceSharingEnabled,
     showDisabledFeatures,
+    disabledFeatureMessage,
     disabled,
     onChange,
 }: Props) {
@@ -64,27 +67,40 @@ export default function VisibilitySelector({
 
     return (
         <S.Options>
-            {options.map((option) => (
-                <S.Option
-                    key={option.value}
-                    type="button"
-                    $active={value === option.value}
-                    $color={option.color}
-                    $unavailable={!option.enabled}
-                    onClick={() => onChange(option.value)}
-                    disabled={disabled || !option.enabled}
-                >
-                    <S.OptionIcon $color={option.color} $unavailable={!option.enabled}>
-                        <Icon icon={option.icon} width={16} />
-                    </S.OptionIcon>
-                    <S.OptionText>
-                        <S.OptionTitle>{option.title}</S.OptionTitle>
-                        <S.OptionDescription>
-                            {option.description}
-                        </S.OptionDescription>
-                    </S.OptionText>
-                </S.Option>
-            ))}
+            {options.map((option) => {
+                const item = (
+                    <S.Option
+                        key={option.value}
+                        type="button"
+                        $active={value === option.value}
+                        $color={option.color}
+                        $unavailable={!option.enabled}
+                        onClick={() => onChange(option.value)}
+                        disabled={disabled || !option.enabled}
+                    >
+                        <S.OptionIcon $color={option.color} $unavailable={!option.enabled}>
+                            <Icon icon={option.icon} width={16} />
+                        </S.OptionIcon>
+                        <S.OptionText>
+                            <S.OptionTitle>{option.title}</S.OptionTitle>
+                            <S.OptionDescription>
+                                {option.description}
+                            </S.OptionDescription>
+                        </S.OptionText>
+                    </S.Option>
+                );
+
+                return option.enabled
+                    ? item
+                    : (
+                        <FeaturePromotionTooltip
+                            key={option.value}
+                            message={disabledFeatureMessage}
+                        >
+                            {item}
+                        </FeaturePromotionTooltip>
+                    );
+            })}
         </S.Options>
     );
 }

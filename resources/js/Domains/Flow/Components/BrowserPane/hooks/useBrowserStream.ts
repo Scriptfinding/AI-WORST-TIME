@@ -10,6 +10,19 @@ interface UseBrowserStreamOptions {
     runId: number;
 }
 
+function resolveStreamUrl(url: string): URL {
+    const parsedUrl = new URL(url, window.location.origin);
+    const loopbackHosts = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+    if (loopbackHosts.has(parsedUrl.hostname)) {
+        parsedUrl.hostname = window.location.hostname;
+    }
+
+    parsedUrl.protocol = parsedUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+
+    return parsedUrl;
+}
+
 // Connects BrowserPane to a live run stream and renders incoming frames on its canvas.
 export function useBrowserStream({
     active,
@@ -151,8 +164,7 @@ export function useBrowserStream({
 
         canControlRef.current = capability.can_control;
         setCanControl(capability.can_control);
-        const parsedUrl = new URL(capability.url, window.location.origin);
-        parsedUrl.protocol = parsedUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+        const parsedUrl = resolveStreamUrl(capability.url);
         const socket = new WebSocket(parsedUrl.toString(), capability.protocol);
         wsRef.current = socket;
         socket.binaryType = 'arraybuffer';

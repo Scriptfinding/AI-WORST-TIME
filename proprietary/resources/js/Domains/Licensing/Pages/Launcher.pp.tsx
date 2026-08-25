@@ -99,6 +99,9 @@ export default function Launcher() {
                             required
                             onChange={(event) => communityForm.setData('email', event.target.value)}
                         />
+                        <S.FormHint>
+                            We will never spam you. Your email simply provides stronger confirmation that you accept the license terms.
+                        </S.FormHint>
                         <Button type="submit" fullWidth loading={communityForm.processing}>
                             Send my license link
                         </Button>

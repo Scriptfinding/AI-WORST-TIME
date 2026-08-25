@@ -5,6 +5,7 @@ import type { SidebarFlow } from '@/Domains/Folder/Components/FolderTreeSidebar/
 import FolderNode from '@/Domains/Folder/Components/FolderTreeSidebar/components/FolderNode/FolderNode';
 import FlowRow from '@/Domains/Folder/Components/FolderTreeSidebar/components/FlowRow/FlowRow';
 import TeamTreeSection from '@/Domains/Folder/Components/FolderTreeSidebar/components/TeamTreeSection/TeamTreeSection';
+import FeaturePromotionTooltip from '@/Domains/Licensing/Components/FeatureFlags/FeaturePromotionTooltip/FeaturePromotionTooltip';
 import * as S from './styled';
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
     teamTrees: TeamTree[];
     teamsEnabled: boolean;
     disabled: boolean;
+    disabledFeatureMessage: string;
     currentFolderId: Id | null;
     active: boolean;
     expanded: boolean;
@@ -27,6 +29,7 @@ export default function WorkspaceTreeSection({
     teamTrees,
     teamsEnabled,
     disabled,
+    disabledFeatureMessage,
     currentFolderId,
     active,
     expanded,
@@ -38,39 +41,51 @@ export default function WorkspaceTreeSection({
         || rootFlows.length > 0
         || teamTrees.length > 0;
     const workspaceUrl = '/flows?view=workspace';
+    const workspaceRow = (
+        <S.Row
+            href={disabled ? undefined : workspaceUrl}
+            $active={active}
+            $disabled={disabled}
+            aria-disabled={disabled}
+            onClick={(event) => {
+                if (disabled) {
+                    event.preventDefault();
+                    return;
+                }
+                handleLinkClick(event, workspaceUrl);
+            }}
+        >
+            <S.Chevron
+                $visible={hasContent && !disabled}
+                $expanded={expanded}
+                onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (!disabled) onToggle();
+                }}
+            >
+                <Icon icon="lucide:chevron-right" />
+            </S.Chevron>
+            <S.IconSlot>
+                <Icon icon="lucide:building-2" />
+            </S.IconSlot>
+            <S.Label>Workspace</S.Label>
+        </S.Row>
+    );
 
     return (
         <>
             <S.Divider />
-            <S.Row
-                href={disabled ? undefined : workspaceUrl}
-                $active={active}
-                $disabled={disabled}
-                aria-disabled={disabled}
-                onClick={(event) => {
-                    if (disabled) {
-                        event.preventDefault();
-                        return;
-                    }
-                    handleLinkClick(event, workspaceUrl);
-                }}
-            >
-                <S.Chevron
-                    $visible={hasContent && !disabled}
-                    $expanded={expanded}
-                    onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        if (!disabled) onToggle();
-                    }}
-                >
-                    <Icon icon="lucide:chevron-right" />
-                </S.Chevron>
-                <S.IconSlot>
-                    <Icon icon="lucide:building-2" />
-                </S.IconSlot>
-                <S.Label>Workspace</S.Label>
-            </S.Row>
+            {disabled
+                ? (
+                    <FeaturePromotionTooltip
+                        message={disabledFeatureMessage}
+                        placement="right"
+                    >
+                        {workspaceRow}
+                    </FeaturePromotionTooltip>
+                )
+                : workspaceRow}
 
             {expanded && !disabled && (
                 <>

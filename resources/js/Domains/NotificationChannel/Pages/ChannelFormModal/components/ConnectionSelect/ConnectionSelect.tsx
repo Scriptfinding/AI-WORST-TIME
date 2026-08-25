@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Icon } from '@/Shared/UI/Icon/Icon';
 import { useSearchablePopover } from '@/Shared/Hooks/useSearchablePopover';
-import { useQuickRequirementCreation } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/contexts/QuickRequirementCreationContext';
+import { useIntegrationCreation } from '@/Domains/Integration/Contexts/IntegrationCreationContext';
 import type { IntegrationCategory, IntegrationProvider } from '@/Domains/Integration/types';
 import type { ProviderMeta } from '@/Domains/NotificationChannel/Pages/ChannelFormModal/config';
 import type { MessengerIntegration } from '@/Domains/NotificationChannel/Pages/ChannelFormModal/utils';
@@ -30,7 +30,7 @@ export default function ConnectionSelect({
     creationProvider,
     creationCategory,
 }: Props) {
-    const quickCreation = useQuickRequirementCreation();
+    const integrationCreation = useIntegrationCreation();
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [refreshing, setRefreshing] = useState(false);
@@ -57,13 +57,13 @@ export default function ConnectionSelect({
     const createIntegration = async () => {
         setCreating(true);
         try {
-            const integration = await quickCreation.create('integration', {
+            const result = await integrationCreation.create({
                 provider: creationProvider,
                 category: creationCategory,
             });
-            if (integration) {
-                await quickCreation.refresh('integrations');
-                onChange(integration.id);
+            if (result) {
+                await integrationCreation.refresh('integrations');
+                onChange(result.integration.id);
                 setOpen(false);
                 setSearch('');
                 return;
@@ -77,7 +77,7 @@ export default function ConnectionSelect({
     const refreshIntegrations = async () => {
         setRefreshing(true);
         try {
-            await quickCreation.refresh('integrations');
+            await integrationCreation.refresh('integrations');
         } finally {
             setRefreshing(false);
             requestAnimationFrame(() => (inputRef.current ?? triggerRef.current)?.focus());
@@ -91,7 +91,7 @@ export default function ConnectionSelect({
                 <S.MissingResultContent>
                     No {providerMeta?.label || providerName} connections found.
                 </S.MissingResultContent>
-                {quickCreation.available && (
+                {integrationCreation.available && (
                     <S.RefreshButton
                         type="button"
                         title="Refresh connections"
@@ -102,7 +102,7 @@ export default function ConnectionSelect({
                         <Icon icon={refreshing ? 'lucide:loader-circle' : 'lucide:refresh-cw'} width={13} />
                     </S.RefreshButton>
                 )}
-                {quickCreation.available && (
+                {integrationCreation.available && (
                     <S.CreateAction type="button" disabled={creating} onClick={createIntegration}>
                         + Add integration
                     </S.CreateAction>
@@ -145,7 +145,7 @@ export default function ConnectionSelect({
                             onChange={event => setSearch(event.target.value)}
                             placeholder="Search connections..."
                         />
-                        {quickCreation.available && (
+                        {integrationCreation.available && (
                             <S.RefreshButton
                                 type="button"
                                 title="Refresh connections"
@@ -159,7 +159,7 @@ export default function ConnectionSelect({
                         )}
                     </S.Header>
                     <S.List>
-                        {quickCreation.available && (
+                        {integrationCreation.available && (
                             <S.CreateAction type="button" disabled={creating} onClick={createIntegration}>
                                 + Add integration
                             </S.CreateAction>

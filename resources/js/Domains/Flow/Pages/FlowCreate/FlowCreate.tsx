@@ -10,7 +10,7 @@ import { TextArea } from '@/Shared/UI/Input/Input';
 import Button, { ButtonLink } from '@/Shared/UI/Button/Button';
 import VisibilityPicker, { type VisibilityPickerValue } from '@proprietary/Domains/Flow/Components/VisibilityPicker/VisibilityPicker.pp';
 import RepoLinkForm, { type RepoLinkValue } from '@proprietary/Domains/Integration/Components/RepoLinkForm/RepoLinkForm.pp';
-import MessageContent from '@/Domains/Licensing/Components/FeatureFlags/FeatureUnavailablePanel/MessageContent/MessageContent';
+import FeaturePromotionTooltip from '@/Domains/Licensing/Components/FeatureFlags/FeaturePromotionTooltip/FeaturePromotionTooltip';
 import type { FolderTree, TeamTree } from '@/Domains/Folder/types';
 import type { Integration } from '@/Domains/Integration/types';
 import {
@@ -117,6 +117,17 @@ export default function FlowCreate({ personalTree, defaultOwnerId = null, defaul
     const showRepository = settings.vcs_enabled || repositoryPromoted;
     const repoLinkComplete = !!(repoLink.integration_id && repoLink.repo_full_name && repoLink.branch);
     const canSubmit = !form.processing && (creationChoice !== 'repository' || repoLinkComplete) && (pickerValue.visibility !== 'team' || pickerValue.teamId !== null);
+    const repositoryOption = showRepository ? (
+        <S.SourceOption
+            $active={creationChoice === 'repository'}
+            onClick={() => setCreationChoice('repository')}
+            type="button"
+            disabled={!settings.vcs_enabled}
+        >
+            <Icon icon="lucide:git-branch" width={14} />
+            Git Repository
+        </S.SourceOption>
+    ) : null;
 
     return (
         <AppLayout title="Create Flow">
@@ -181,25 +192,14 @@ export default function FlowCreate({ personalTree, defaultOwnerId = null, defaul
                                 <Icon icon="lucide:code-2" width={14} />
                                 Raw Code
                             </S.SourceOption>
-                            {showRepository && (
-                                <S.SourceOption
-                                    $active={creationChoice === 'repository'}
-                                    onClick={() => setCreationChoice('repository')}
-                                    type="button"
-                                    disabled={!settings.vcs_enabled}
-                                >
-                                    <Icon icon="lucide:git-branch" width={14} />
-                                    Git Repository
-                                </S.SourceOption>
-                            )}
+                            {repositoryPromoted
+                                ? (
+                                    <FeaturePromotionTooltip message={settings.disabled_feature_message}>
+                                        {repositoryOption}
+                                    </FeaturePromotionTooltip>
+                                )
+                                : repositoryOption}
                         </S.SourceToggle>
-
-                        {repositoryPromoted && (
-                            <S.SourceHint>
-                                <Icon icon="lucide:lock" width={16} />
-                                <span><MessageContent message={settings.disabled_feature_message} /></span>
-                            </S.SourceHint>
-                        )}
 
                         {creationChoice === 'code' ? (
                             <>

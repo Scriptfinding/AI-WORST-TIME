@@ -44,7 +44,7 @@ export default function CreateMailboxModal({
             isOpen={isOpen}
             onClose={onClose}
             title="Create Mailbox"
-            width="420px"
+            width="560px"
             zIndex={zIndex}
             modalKind={quickMode ? 'mailbox-quick-create' : undefined}
         >

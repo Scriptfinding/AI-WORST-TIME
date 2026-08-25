@@ -90,6 +90,10 @@ export const DropdownEmpty = styled.li`
 `;
 
 export const NoDomainHint = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     font-size: 12px;
     color: ${({ theme }) => theme.colors.text.tertiary};
     padding: 8px 12px;
@@ -97,12 +101,7 @@ export const NoDomainHint = styled.div`
     border: 1px solid ${({ theme }) => theme.colors.accent.warning}20;
     border-radius: ${({ theme }) => theme.radius.md};
 
-    a {
-        color: ${({ theme }) => theme.colors.accent.primary};
-        text-decoration: none;
-
-        &:hover {
-            text-decoration: underline;
-        }
+    > span {
+        line-height: 1.45;
     }
 `;

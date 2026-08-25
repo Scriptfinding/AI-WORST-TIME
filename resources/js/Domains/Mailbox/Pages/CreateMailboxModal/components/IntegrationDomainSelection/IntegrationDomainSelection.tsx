@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { Icon } from '@/Shared/UI/Icon/Icon';
 import { useSearchablePopover } from '@/Shared/Hooks/useSearchablePopover';
+import { useIntegrationCreation } from '@/Domains/Integration/Contexts/IntegrationCreationContext';
+import Button from '@/Shared/UI/Button/Button';
 import type { MailboxDomain } from '@/Domains/Mailbox/types';
 import * as S from './styled';
 
@@ -11,8 +13,10 @@ interface Props {
 }
 
 export default function IntegrationDomainSelection({ domains, value, onChange }: Props) {
+    const integrationCreation = useIntegrationCreation();
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
+    const [creating, setCreating] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const searchRef = useRef<HTMLInputElement>(null);
     const selectedDomain = domains.find(domain => String(domain.id) === value);
@@ -32,11 +36,34 @@ export default function IntegrationDomainSelection({ domains, value, onChange }:
         setSearch('');
     };
 
+    const createDomain = async () => {
+        setCreating(true);
+        try {
+            const result = await integrationCreation.create({ provider: 'mailbox' });
+            if (!result) return;
+
+            await integrationCreation.refresh('mailboxes');
+            if (result.domain) onChange(String(result.domain.id));
+        } finally {
+            setCreating(false);
+        }
+    };
+
     if (domains.length === 0) {
         return (
             <S.NoDomainHint>
-                No verified domains available. Go to <a href="/integrations">Integrations</a>{' '}
-                to set up a Mailbox integration and add a domain first.
+                <span>No verified domains available. Set up a Mailbox integration and verify a domain first.</span>
+                {integrationCreation.available && (
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        loading={creating}
+                        onClick={() => void createDomain()}
+                    >
+                        + Set up domain
+                    </Button>
+                )}
             </S.NoDomainHint>
         );
     }

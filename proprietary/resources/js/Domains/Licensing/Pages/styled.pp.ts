@@ -38,6 +38,13 @@ export const Form = styled.form`
     margin-top: 8px;
 `;
 
+export const FormHint = styled.p`
+    color: ${({ theme }) => theme.colors.text.tertiary};
+    font-size: 12px;
+    line-height: 1.5;
+    margin: -4px 0 0;
+`;
+
 export const Divider = styled.div`
     display: flex;
     align-items: center;

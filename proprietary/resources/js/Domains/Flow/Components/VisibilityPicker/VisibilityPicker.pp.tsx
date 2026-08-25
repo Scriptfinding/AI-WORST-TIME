@@ -49,6 +49,7 @@ export default function VisibilityPicker({
                 teamsEnabled={teamsEnabled}
                 workspaceSharingEnabled={workspaceSharingEnabled}
                 showDisabledFeatures={settings?.promote_disabled_features ?? false}
+                disabledFeatureMessage={settings?.disabled_feature_message ?? ''}
                 disabled={disabled}
                 onChange={(visibility) =>
                     onChange({ ...value, visibility })

@@ -15,9 +15,9 @@ import IntegrationProviderSelector from '@/Shared/UI/IntegrationProviderSelector
 import type { ProviderMeta } from '@/Domains/NotificationChannel/Pages/ChannelFormModal/config';
 import { getProviderConfig } from '@/Domains/Integration/Pages/providerConfig';
 import type { IntegrationProvider } from '@/Domains/Integration/types';
+import { useIntegrationCreation } from '@/Domains/Integration/Contexts/IntegrationCreationContext';
 import { useAuth } from '@/App/Hooks/usePageProps';
 import { canEditOwnership, OWNERSHIP_DISABLED_HINT } from '@/Shared/Utils/ownershipPermissions';
-import { useQuickRequirementCreation } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/contexts/QuickRequirementCreationContext';
 import CustomSelect from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/NodeConfigModal/components/CustomSelect/CustomSelect';
 import type {
     AiIntegration,
@@ -52,7 +52,7 @@ export default function AiModelFormModal({
     zIndex,
     quickMode,
 }: AiModelFormModalProps) {
-    const quickCreation = useQuickRequirementCreation();
+    const integrationCreation = useIntegrationCreation();
     const { user } = useAuth();
     const editing = Boolean(model);
     const initialIntegration = aiIntegrations.find(integration => integration.id === model?.ai_integration_id);
@@ -228,14 +228,10 @@ export default function AiModelFormModal({
     };
 
     const createIntegration = async () => {
-        if (!quickCreation.available) {
-            router.visit('/integrations');
-            return;
-        }
-
-        const integration = await quickCreation.create('integration', { category: 'ai' });
-        if (!integration) return;
-        await quickCreation.refresh('integrations');
+        const result = await integrationCreation.create({ category: 'ai' });
+        if (!result) return;
+        await integrationCreation.refresh('integrations');
+        const { integration } = result;
         setVendor(integration.provider);
         setAiIntegrationId(integration.id);
         setSelectedModelId('');
@@ -254,23 +250,19 @@ export default function AiModelFormModal({
         >
             <S.Form onSubmit={handleSubmit}>
                 {aiIntegrations.length === 0 ? (
-                    <div>
-                        <S.Label>AI integration</S.Label>
-                        <S.EmptyIntegrationResult>
-                            <S.EmptyIntegrationResultContent>
-                                <Icon icon="lucide:info" width={14} />
-                                No AI integrations found.
-                            </S.EmptyIntegrationResultContent>
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => void createIntegration()}
-                            >
-                                + Add integration
-                            </Button>
-                        </S.EmptyIntegrationResult>
-                    </div>
+                    <S.EmptyIntegrationResult>
+                        <S.EmptyIntegrationResultContent>
+                            No AI integrations available. Set up an AI integration first.
+                        </S.EmptyIntegrationResultContent>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => void createIntegration()}
+                        >
+                            + Add integration
+                        </Button>
+                    </S.EmptyIntegrationResult>
                 ) : (
                     <>
                         <IntegrationProviderSelector
@@ -305,9 +297,6 @@ export default function AiModelFormModal({
                                 {errors.ai_integration_id && <S.ErrorText>{errors.ai_integration_id}</S.ErrorText>}
                             </div>
                         )}
-                    </>
-                )}
-
                 {selectedIntegration && (
                     <div>
                         <S.Label>AI model</S.Label>
@@ -396,6 +385,8 @@ export default function AiModelFormModal({
                         {editing ? 'Save Model' : 'Create Model'}
                     </Button>
                 </S.FormActions>
+                    </>
+                )}
             </S.Form>
         </Modal>
     );

@@ -9,6 +9,7 @@ import Button from '@/Shared/UI/Button/Button';
 import BulkDeleteConfirmation from '@/Shared/UI/BulkDeleteConfirmation/BulkDeleteConfirmation';
 import { useConfirm } from '@/Shared/Hooks/useConfirm';
 import type { Integration } from '@/Domains/Integration/types';
+import { IntegrationCreationProvider } from '@/Domains/Integration/Contexts/IntegrationCreationContext';
 import type { NotificationChannel } from '@/Domains/NotificationChannel/types';
 import { invalidateChannelCache } from '@/Domains/Flow/Pages/FlowEditor/utils/channelSuggestions';
 import type { PageProps } from '@/App/types';
@@ -89,6 +90,10 @@ export default function Channels({ channels, groups, messengerIntegrations, team
     };
 
     return (
+        <IntegrationCreationProvider
+            teams={teams}
+            integrationReloadKeys={['messengerIntegrations']}
+        >
         <AppLayout
             title="Notification Channels"
             headerRight={settings.messenger_enabled ? (
@@ -146,5 +151,6 @@ export default function Channels({ channels, groups, messengerIntegrations, team
             )}
             <ConfirmModal />
         </AppLayout>
+        </IntegrationCreationProvider>
     );
 }

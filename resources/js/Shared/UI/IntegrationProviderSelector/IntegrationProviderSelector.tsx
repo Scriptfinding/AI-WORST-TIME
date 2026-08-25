@@ -1,6 +1,5 @@
 import { Icon } from '@/Shared/UI/Icon/Icon';
-import { router } from '@inertiajs/react';
-import { useQuickRequirementCreation } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/contexts/QuickRequirementCreationContext';
+import { useIntegrationCreation } from '@/Domains/Integration/Contexts/IntegrationCreationContext';
 import Button from '@/Shared/UI/Button/Button';
 import * as S from './styled';
 
@@ -31,16 +30,13 @@ export default function IntegrationProviderSelector({
     emptyMessage,
     onIntegrationCreated,
 }: Props) {
-    const quickCreation = useQuickRequirementCreation();
+    const integrationCreation = useIntegrationCreation();
     const createIntegration = async () => {
-        if (!quickCreation.available) {
-            router.visit('/integrations');
-            return;
-        }
-        const integration = await quickCreation.create('integration', { category });
-        if (!integration) return;
+        const result = await integrationCreation.create({ category });
+        if (!result) return;
 
-        await quickCreation.refresh('integrations');
+        await integrationCreation.refresh('integrations');
+        const { integration } = result;
         if (onIntegrationCreated) {
             onIntegrationCreated(integration.provider, integration.id);
         } else {
@@ -50,11 +46,10 @@ export default function IntegrationProviderSelector({
 
     return (
         <div>
-            <S.Label>{label}</S.Label>
+            {providers.length > 0 && <S.Label>{label}</S.Label>}
             {providers.length === 0 ? (
                 <S.EmptyResult>
                     <S.EmptyResultContent>
-                        <Icon icon="lucide:info" width={14} />
                         {emptyMessage}
                     </S.EmptyResultContent>
                     <Button type="button" variant="secondary" size="sm" onClick={() => void createIntegration()}>

@@ -55,13 +55,15 @@ export default function ChannelFormModal({
                     label="Messenger"
                     providerMeta={PROVIDER_META}
                     category="messenger"
-                    emptyMessage="No messenger integrations found."
+                    emptyMessage="No messenger integrations available. Set up a messenger integration first."
                     onIntegrationCreated={(provider, integrationId) => {
                         form.handleMessengerChange(provider);
                         form.handleIntegrationChange(integrationId);
                     }}
                 />
 
+                {messengerIntegrations.length > 0 && (
+                    <>
                 {form.messenger && (
                     <ConnectionSelect
                         integrations={form.filteredIntegrations}
@@ -117,6 +119,8 @@ export default function ChannelFormModal({
                         {mode === 'create' ? 'Create Channel' : 'Update Channel'}
                     </Button>
                 </div>
+                    </>
+                )}
             </form>
             <ConfirmModal />
         </Modal>

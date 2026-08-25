@@ -8,6 +8,7 @@ import type { PageProps } from '@/App/types';
 import { useAuth, useCurrentWorkspace } from '@/App/Hooks/usePageProps';
 import FeatureUnavailablePanel from '@/Domains/Licensing/Components/FeatureFlags/FeatureUnavailablePanel/FeatureUnavailablePanel';
 import { getProviderConfig } from '@/Domains/Integration/Pages/providerConfig';
+import { IntegrationCreationProvider } from '@/Domains/Integration/Contexts/IntegrationCreationContext';
 import type { Flow } from '@/Domains/Flow/types';
 import Button from '@/Shared/UI/Button/Button';
 import Modal from '@/Shared/UI/Modal/Modal';
@@ -317,6 +318,10 @@ export default function AiModels({ aiModels, groups, aiIntegrations, teams, filt
     };
 
     return (
+        <IntegrationCreationProvider
+            teams={teams}
+            integrationReloadKeys={['aiIntegrations']}
+        >
         <AppLayout
             title="AI Models"
             headerRight={settings.ai_enabled ? (
@@ -515,5 +520,6 @@ export default function AiModels({ aiModels, groups, aiIntegrations, teams, filt
             )}
             <ConfirmModal />
         </AppLayout>
+        </IntegrationCreationProvider>
     );
 }

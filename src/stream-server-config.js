@@ -12,9 +12,7 @@ const optionalString = z.preprocess(
 const schema = z.object({
     BROWSER_STREAM_INTERNAL_PORT: positiveInteger.default(6080),
     BROWSER_STREAM_SECRET: z.string().min(32),
-    BROWSER_STREAM_ALLOWED_ORIGINS: z.string().default(
-        '~^https://([a-zA-Z0-9-]+\\.)*puppetflow\\.com$~,~^https?://localhost(?::[0-9]+)?$~,~^https?://127\\.0\\.0\\.1(?::[0-9]+)?$~,~^https?://\\[::1\\](?::[0-9]+)?$~',
-    ),
+    BROWSER_STREAM_ALLOWED_ORIGINS: z.string().default('*'),
     BROWSER_STREAM_MAX_TOKEN_TTL: positiveInteger.default(300),
     BROWSER_STREAM_PRODUCER_TOKEN_TTL: positiveInteger.default(300),
     BROWSER_STREAM_PRODUCER_MAX_TOKEN_TTL: positiveInteger.default(10000029),

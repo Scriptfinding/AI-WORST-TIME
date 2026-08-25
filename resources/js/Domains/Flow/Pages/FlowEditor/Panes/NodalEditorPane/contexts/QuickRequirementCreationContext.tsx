@@ -19,6 +19,7 @@ import type {
 import { PROVIDERS, type ProviderConfig } from '@/Domains/Integration/Pages/providerConfig';
 import IntegrationFormModal from '@/Domains/Integration/Pages/IntegrationFormModal/IntegrationFormModal';
 import MailboxDomainModal from '@/Domains/Integration/Pages/MailboxDomainModal/MailboxDomainModal';
+import { IntegrationCreationBridge } from '@/Domains/Integration/Contexts/IntegrationCreationContext';
 import AiModelFormModal from '@/Domains/AiModel/Pages/AiModelFormModal';
 import type { AiIntegration, CreatedAiModel } from '@/Domains/AiModel/types';
 import ChannelFormModal from '@/Domains/NotificationChannel/Pages/ChannelFormModal/ChannelFormModal';
@@ -399,9 +400,18 @@ export function QuickRequirementCreationProvider({
     };
 
     const mailboxIntegration = mailboxIntegrations[0];
+    const integrationCreationValue = {
+        available: true,
+        refresh,
+        create: async (options?: IntegrationCreationOptions) => {
+            const integration = await create('integration', options);
+            return integration ? { integration } : null;
+        },
+    };
 
     return (
         <QuickRequirementCreationContext.Provider value={{ create, refresh, available: true }}>
+            <IntegrationCreationBridge value={integrationCreationValue}>
             {children}
             {activeStack.map((modal, modalIndex) => (
                 <Fragment key={modal.id}>
@@ -532,6 +542,7 @@ export function QuickRequirementCreationProvider({
                 </Fragment>
             ))}
             <ConfirmModal />
+            </IntegrationCreationBridge>
         </QuickRequirementCreationContext.Provider>
     );
 }
