@@ -16,7 +16,7 @@ Puppetflow is a self-hosted browser automation platform for writing, running, sc
 ## 🌐 Website and documentation
 
 - Website: [puppetflow.com](https://puppetflow.com)
-- Video: [Puppetflow in 100 seconds](https://www.youtube.com/watch?v=0TNsKNjcg6U)
+- Video: [Puppetflow in 100 seconds](https://showcase.puppetflow.com)
 - Documentation: [docs.puppetflow.com](https://docs.puppetflow.com)
 - Self-hosting guide: [Install or update Puppetflow](https://docs.puppetflow.com/self-hosting/installation)
 
@@ -59,7 +59,7 @@ Install the package from **Settings > Community Nodes** on a self-hosted n8n ins
 
 ### Join our Discord
 
-[<img src="docs/img/discord.png" width="64" alt="Join our Discord">](https://discord.gg/qebKgcJSAS)
+[<img src="docs/img/discord.png" width="64" alt="Join our Discord">](https://discord.puppetflow.com)
 
 ### Open an Issue
 
