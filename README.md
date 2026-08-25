@@ -9,7 +9,7 @@ Puppetflow is a self-hosted browser automation platform for writing, running, sc
 ⭐️ Like Puppetflow? Give the repository a star. It helps others discover the project.
 
 <div align="center">
-  <h3>Install Puppetflow in seconds</h3>
+  <h3>Install Puppetflow with one command</h3>
   <p><code>curl -fsSL https://puppetflow.com/install.sh | bash</code></p>
 </div>
 
