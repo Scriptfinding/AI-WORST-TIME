@@ -13,20 +13,6 @@ Puppetflow is a self-hosted browser automation platform for writing, running, sc
   <p><code>curl -fsSL https://puppetflow.com/install.sh | bash</code></p>
 </div>
 
----
-
-## Puppetflow in action
-
-<div align="center">
-  <img src="docs/img/cap2.png" width="100%" alt="Puppetflow visual flow builder" />
-  <br />
-  <img src="docs/img/cap1.png" width="100%" alt="Puppetflow run details with browser recording, logs, and action timeline" />
-  <br />
-  <img src="docs/img/cap3.png" width="100%" alt="Puppetflow integrations with messaging, AI, vault, and Git providers" />
-  <br />
-  <img src="docs/img/cap4.png" width="100%" alt="Puppetflow flow explorer showing folders and published browser automation flows" />
-</div>
-
 ## 🌐 Website and documentation
 
 - Website: [puppetflow.com](https://puppetflow.com)
@@ -56,6 +42,18 @@ Puppetflow provides the [`n8n-nodes-puppetflow`](https://www.npmjs.com/package/n
 - Download screenshots, files, and session recordings.
 
 Install the package from **Settings > Community Nodes** on a self-hosted n8n instance, then connect it with your Puppetflow instance URL and an API key from **Profile > API Keys**. See the [n8n integration guide](https://docs.puppetflow.com/guide/integrations#n8n) for setup details.
+
+## Puppetflow in action
+
+<div align="center">
+  <img src="docs/img/cap2.png" width="100%" alt="Puppetflow visual flow builder" />
+  <br />
+  <img src="docs/img/cap1.png" width="100%" alt="Puppetflow run details with browser recording, logs, and action timeline" />
+  <br />
+  <img src="docs/img/cap3.png" width="100%" alt="Puppetflow integrations with messaging, AI, vault, and Git providers" />
+  <br />
+  <img src="docs/img/cap4.png" width="100%" alt="Puppetflow flow explorer showing folders and published browser automation flows" />
+</div>
 
 ## 🛟 Discussion / Need help?
 

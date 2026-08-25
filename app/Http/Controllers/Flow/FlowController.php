@@ -105,7 +105,7 @@ final class FlowController extends Controller
         ]);
     }
 
-    public function store(StoreFlowRequest $request): RedirectResponse
+    public function store(StoreFlowRequest $request): RedirectResponse|\Symfony\Component\HttpFoundation\Response
     {
         $workspaceId = $this->workspaceId();
         $user = $this->user($request);
@@ -199,7 +199,15 @@ final class FlowController extends Controller
             return $flow;
         }, 3);
 
-        return redirect()->to(route('flows.show', $flow).'#code')->with('success', 'Flow created.');
+        $editorUrl = route('flows.show', $flow).'#code';
+
+        if ($request->header('X-Inertia')) {
+            $request->session()->flash('success', 'Flow created.');
+
+            return Inertia::location($editorUrl);
+        }
+
+        return redirect()->to($editorUrl)->with('success', 'Flow created.');
     }
 
     public function show(Request $request, Flow $flow): Response
