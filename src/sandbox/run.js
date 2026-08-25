@@ -351,7 +351,7 @@ module.exports = async function(appDir, flowId, quiet) {
     await __prepareNamedPage(__activePage);
     __registerNamedPage('Default', __activePage);
 
-    // ── Video recording (paid feature, module under Puppetflow Proprietary License) ──
+    // Video recording (paid feature, module under Puppetflow Proprietary License)
     const _recordingEnabled = process.env.RECORDING_ENABLED === 'true'
       || (typeof process.env.RECORDING_ENABLED === 'undefined' && !!process.env.RECORDING_PATH);
     const _recordingPath = _recordingEnabled ? process.env.RECORDING_PATH : null;
@@ -375,7 +375,7 @@ module.exports = async function(appDir, flowId, quiet) {
       }
     }
 
-    // ── CDP screencast (streaming + recording) ──
+    // CDP screencast (streaming + recording)
     const _streamUrl = process.env.STREAM_SERVER_URL;
     const _streamRunId = process.env.STREAM_RUN_ID;
     const _streamToken = process.env.STREAM_TOKEN;

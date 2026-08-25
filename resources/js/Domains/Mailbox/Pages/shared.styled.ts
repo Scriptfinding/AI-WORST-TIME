@@ -127,7 +127,7 @@ export const HelperText = styled.p`
     margin: 0;
 `;
 
-// ── Group combobox ──
+// Group combobox
 
 export const ComboboxWrapper = styled.div`
     position: relative;

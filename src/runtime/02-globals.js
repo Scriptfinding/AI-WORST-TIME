@@ -36,8 +36,8 @@ let __keyboardSpeedValue = Number.isFinite(__configuredKeyboardSpeed) && __confi
   ? __configuredKeyboardSpeed
   : 100;
 
-// ── Run context: artifact paths and per-run inputs. Secrets and file paths are
-// captured here then removed from process.env so user code cannot read them. ──
+// Run context: artifact paths and per-run inputs. Secrets and file paths are
+// captured here then removed from process.env so user code cannot read them.
 const __runId = $json.$context.run_id || 'default';
 const __flowExecutionDir = './' + (process.env.FLOW_EXECUTION_DIR || 'data/execution');
 const __flowArtifactsBasePath = process.env.PUPPETFLOW_ARTIFACTS_BASE_PATH || __flowExecutionDir + '/users/' + String(process.env.FLOW_OWNER_ID || 0).split('').join('/') + '/user/flows/' + String(process.env.FLOW_INTERNAL_ID || 0).split('').join('/') + '/flow';

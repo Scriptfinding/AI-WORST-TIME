@@ -3,7 +3,7 @@
        prod-sqlite prod-sqlite-down prod-sqlite-logs \
        down logs
 
-# ── Development ──────────────────────────────────────────
+# Development
 
 dev:
 	@rm -f bootstrap/cache/config.php bootstrap/cache/routes*.php bootstrap/cache/views.php
@@ -27,7 +27,7 @@ dev-seed:
 dev-fresh:
 	docker exec -it puppetflow-app php artisan migrate:fresh --seed
 
-# ── Production ───────────────────────────────────────────
+# Production
 
 prod:
 	docker compose -f docker-compose.prod-pgsql.yml up --build
@@ -56,7 +56,7 @@ prod-sqlite-down:
 prod-sqlite-logs:
 	docker compose -f docker-compose.prod-sqlite.yml logs -f
 
-# ── Shared ───────────────────────────────────────────────
+# Shared
 
 down:
 	docker compose down

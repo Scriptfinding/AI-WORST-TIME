@@ -7,7 +7,7 @@
     <title>API Documentation - {{ app(\App\Contracts\BrandingProvider::class)->current()['name'] }}</title>
     <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
     <style>
-        /* ── light palette ── */
+        /* Light palette */
         [data-theme="light"] {
             --bg: #ffffff;
             --bg-raised: #f8f9fb;
@@ -27,7 +27,7 @@
             --scrollbar-thumb: #c4c9d4;
         }
 
-        /* ── dark palette ── */
+        /* Dark palette */
         [data-theme="dark"] {
             --bg: #111118;
             --bg-raised: #1a1a24;
@@ -56,7 +56,7 @@
             transition: background .2s;
         }
 
-        /* ── toolbar ── */
+        /* Toolbar */
         .toolbar {
             display: flex;
             align-items: center;
@@ -82,7 +82,7 @@
         .back-link:hover { color: var(--text); }
         .back-link svg { width: 14px; height: 14px; }
 
-        /* ── theme switcher ── */
+        /* Theme switcher */
         .theme-switcher {
             display: flex;
             align-items: center;
@@ -123,7 +123,7 @@
         /* layout */
         .swagger-ui { max-width: 1200px; margin: 0 auto; padding: 0 20px 60px; }
 
-        /* ── global text ── */
+        /* Global text */
         .swagger-ui,
         .swagger-ui p,
         .swagger-ui span,
@@ -169,10 +169,10 @@
 
         .swagger-ui .parameter__name.required::after { color: #f87171; }
 
-        /* ── links ── */
+        /* Links */
         .swagger-ui a, .swagger-ui a span { color: var(--accent); }
 
-        /* ── backgrounds ── */
+        /* Backgrounds */
         .swagger-ui .scheme-container {
             background: var(--bg-raised);
             border-bottom: 1px solid var(--border);
@@ -254,7 +254,7 @@
         .swagger-ui .copy-to-clipboard { background: var(--bg-raised); border: 1px solid var(--border); border-radius: 4px; }
         .swagger-ui .copy-to-clipboard button { background: transparent; color: var(--text-muted); }
 
-        /* ── models ── */
+        /* Models */
         .swagger-ui section.models {
             border: 1px solid var(--border);
             background: var(--bg-raised);
@@ -263,12 +263,12 @@
         .swagger-ui .model-container { background: var(--bg-raised); }
         .swagger-ui .model-box { background: var(--bg); border-color: var(--border); }
 
-        /* ── tables ── */
+        /* Tables */
         .swagger-ui .table-container { background: var(--bg-table); }
         .swagger-ui table tbody tr td { border-bottom: 1px solid var(--border); padding: 10px 0; }
         .swagger-ui .responses-table tbody tr td { border-bottom: none; padding: 12px 0; }
 
-        /* ── inputs ── */
+        /* Inputs */
         .swagger-ui input[type=text],
         .swagger-ui input[type=password],
         .swagger-ui input[type=search],
@@ -284,7 +284,7 @@
         .swagger-ui input::placeholder,
         .swagger-ui textarea::placeholder { color: var(--text-muted); }
 
-        /* ── buttons ── */
+        /* Buttons */
         .swagger-ui .btn {
             background: var(--bg-input);
             border: 1px solid var(--border);

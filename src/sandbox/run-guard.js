@@ -65,7 +65,7 @@
         throw new Error("Sandbox violation (" + operation + "): access denied - " + _path.resolve(String(targetPath)));
     }
 
-    // ── Patch require("fs") ────────────────────────────────
+    // Patch require("fs")
 
     var _fs = _nativeFs;
 
@@ -143,7 +143,7 @@
             .forEach(function(m) { _patchDual(_fs.promises, m); });
     }
 
-    // ── Patch require("child_process") ─────────────────────
+    // Patch require("child_process")
 
     var _cp = require("child_process");
     function _extractBin(cmd) {
@@ -178,7 +178,7 @@
     _cp.execFile = function() { throw new Error("Sandbox: execFile not allowed"); };
     _cp.execFileSync = function() { throw new Error("Sandbox: execFileSync not allowed"); };
 
-    // ── Restrict process escape hatches ─────────────────────
+    // Restrict process escape hatches
 
     var _origChdir = process.chdir.bind(process);
     process.chdir = function(dir) {

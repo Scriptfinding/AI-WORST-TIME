@@ -357,7 +357,7 @@ class MailboxController extends Controller
         ]);
     }
 
-    // ── Helpers ──
+    // Helpers
 
     private function features(): FeatureFlagService
     {

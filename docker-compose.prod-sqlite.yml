@@ -1,5 +1,5 @@
 services:
-  # ── App (nginx + php-fpm via supervisor) ──
+  # App (nginx + php-fpm via supervisor)
   app:
     build:
       context: .
@@ -28,7 +28,7 @@ services:
       stream-server:
         condition: service_started
 
-  # ── Queue worker 1 ──
+  # Queue worker 1
   queue-1:
     build:
       context: .
@@ -53,7 +53,7 @@ services:
       stream-server:
         condition: service_started
 
-  # ── Queue worker 2 ──
+  # Queue worker 2
   queue-2:
     build:
       context: .
@@ -78,7 +78,7 @@ services:
       stream-server:
         condition: service_started
 
-  # ── Scheduler ──
+  # Scheduler
   scheduler:
     build:
       context: .
@@ -96,7 +96,7 @@ services:
       init-volumes:
         condition: service_completed_successfully
 
-  # ── Mailbox SMTP Server ──
+  # Mailbox SMTP Server
   mailbox-smtp:
     build:
       context: .
@@ -116,7 +116,7 @@ services:
       init-volumes:
         condition: service_completed_successfully
 
-  # ── Browser Stream Server ──
+  # Browser Stream Server
   stream-server:
     build:
       context: .
@@ -132,7 +132,7 @@ services:
       redis:
         condition: service_healthy
 
-  # ── Shared volume initialization ──
+  # Shared volume initialization
   init-volumes:
     image: busybox
     volumes:
@@ -142,7 +142,7 @@ services:
     command: ["sh", "-c", "touch /framework/database.sqlite && chown -R 33:33 /framework /execution /uploads"]
     restart: "no"
 
-  # ── Pinokio (Chromium gateway) ──
+  # Pinokio (Chromium gateway)
   pinokio:
     build:
       context: ../pinokio
@@ -156,7 +156,7 @@ services:
     environment:
       TOKEN: "${PINOKIO_TOKEN:-}"
 
-  # ── Redis ──
+  # Redis
   redis:
     image: redis:8-alpine
     restart: unless-stopped

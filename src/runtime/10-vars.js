@@ -1,4 +1,4 @@
-// ── Runtime variable resolution ──
+// Runtime variable resolution
 const __recordRuntimeSecret = function(value) {
   if (!__runtimeSecretsPath || value === undefined || value === null) return;
   let secret;

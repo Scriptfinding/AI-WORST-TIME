@@ -45,7 +45,7 @@ class IntegrationController extends Controller
         private readonly ResourceAssignmentValidator $assignments,
     ) {}
 
-    // ── Page ──
+    // Page
 
     public function index(Request $request): Response
     {
@@ -88,7 +88,7 @@ class IntegrationController extends Controller
         ]);
     }
 
-    // ── CRUD ──
+    // CRUD
 
     public function store(Request $request): JsonResponse|RedirectResponse
     {
@@ -242,7 +242,7 @@ class IntegrationController extends Controller
         return back()->with('success', 'Integration deleted.');
     }
 
-    // ── Helpers ──
+    // Helpers
 
     private function validateAiModelVisibility(
         Integration $integration,

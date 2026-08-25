@@ -7,7 +7,7 @@ export const Page = styled.div`
     padding-bottom: 60px;
 `;
 
-// ── Repo browser (used by repo link modals) ──
+// Repo browser (used by repo link modals)
 
 export const RepoList = styled.div`
     display: flex;
@@ -120,7 +120,7 @@ export const EmptyMessage = styled.div`
     color: ${({ theme }) => theme.colors.text.tertiary};
 `;
 
-// ── Managed repos ──
+// Managed repos
 
 export const ManagedRepoList = styled.div`
     display: flex;

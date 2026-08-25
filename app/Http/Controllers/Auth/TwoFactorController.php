@@ -29,7 +29,7 @@ class TwoFactorController extends Controller
         return new Google2FA;
     }
 
-    // ── Authenticated: setup / enable / disable ──
+    // Authenticated: setup / enable / disable
 
     public function setup(Request $request): Response|RedirectResponse
     {
@@ -124,7 +124,7 @@ class TwoFactorController extends Controller
         return back()->with('success', 'Two-factor authentication disabled.');
     }
 
-    // ── Guest: challenge after login ──
+    // Guest: challenge after login
 
     public function challenge(Request $request): Response|\Illuminate\Http\RedirectResponse
     {
@@ -226,7 +226,7 @@ class TwoFactorController extends Controller
         return redirect()->to($intended);
     }
 
-    // ── Helpers ──
+    // Helpers
 
     private function validateRecoveryCode(User $user, string $code): bool
     {

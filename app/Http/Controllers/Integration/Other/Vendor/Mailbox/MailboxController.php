@@ -223,7 +223,7 @@ class MailboxController extends Controller
         return response()->json($this->flowsUsingMailboxes($mailboxIds));
     }
 
-    // ── Helpers ──
+    // Helpers
 
     /**
      * @param  Collection<int, string>  $mailboxIds

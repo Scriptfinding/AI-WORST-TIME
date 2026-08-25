@@ -1,5 +1,5 @@
 services:
-  # ── Database migrations (one-shot startup job) ──
+  # Database migrations (one-shot startup job)
   migrate:
     build:
       context: .
@@ -18,7 +18,7 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── App (Laravel server) ──
+  # App (Laravel server)
   app:
     build:
       context: .
@@ -44,7 +44,7 @@ services:
       stream-server:
         condition: service_started
 
-  # ── Queue worker 1 ──
+  # Queue worker 1
   queue-1:
     build:
       context: .
@@ -65,7 +65,7 @@ services:
     depends_on:
       - app
 
-  # ── Queue worker 2 ──
+  # Queue worker 2
   queue-2:
     build:
       context: .
@@ -86,7 +86,7 @@ services:
     depends_on:
       - app
 
-  # ── Scheduler ──
+  # Scheduler
   scheduler:
     build:
       context: .
@@ -104,7 +104,7 @@ services:
     depends_on:
       - app
 
-  # ── Vite HMR ──
+  # Vite HMR
   vite:
     build:
       context: .
@@ -124,7 +124,7 @@ services:
     depends_on:
       - app
 
-  # ── Browser Stream Server ──
+  # Browser Stream Server
   stream-server:
     build:
       context: .
@@ -146,7 +146,7 @@ services:
       redis:
         condition: service_healthy
 
-  # ── Pinokio (Chromium gateway) ──
+  # Pinokio (Chromium gateway)
   pinokio:
     build:
       context: ../pinokio
@@ -166,7 +166,7 @@ services:
       TZ: "Europe/Paris"
       LANGUAGE: "fr-FR"
 
-  # ── PostgreSQL ──
+  # PostgreSQL
   postgres:
     image: postgres:17-alpine
     container_name: puppetflow-postgres
@@ -185,7 +185,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Mailbox SMTP Server ──
+  # Mailbox SMTP Server
   mailbox-smtp:
     build:
       context: .
@@ -205,7 +205,7 @@ services:
     depends_on:
       - app
 
-  # ── Browser stream broker ──
+  # Browser stream broker
   redis:
     image: redis:8-alpine
     container_name: puppetflow-redis

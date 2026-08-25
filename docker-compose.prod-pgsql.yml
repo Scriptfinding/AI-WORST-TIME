@@ -1,5 +1,5 @@
 services:
-  # ── App (nginx + php-fpm via supervisor) ──
+  # App (nginx + php-fpm via supervisor)
   app:
     build:
       context: .
@@ -28,7 +28,7 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── Queue worker 1 ──
+  # Queue worker 1
   queue-1:
     build:
       context: .
@@ -53,7 +53,7 @@ services:
       stream-server:
         condition: service_started
 
-  # ── Queue worker 2 ──
+  # Queue worker 2
   queue-2:
     build:
       context: .
@@ -78,7 +78,7 @@ services:
       stream-server:
         condition: service_started
 
-  # ── Scheduler ──
+  # Scheduler
   scheduler:
     build:
       context: .
@@ -96,7 +96,7 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── Mailbox SMTP Server ──
+  # Mailbox SMTP Server
   mailbox-smtp:
     build:
       context: .
@@ -116,7 +116,7 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── Browser Stream Server ──
+  # Browser Stream Server
   stream-server:
     build:
       context: .
@@ -134,7 +134,7 @@ services:
       redis:
         condition: service_healthy
 
-  # ── Shared execution volume permissions ──
+  # Shared execution volume permissions
   init-volumes:
     image: busybox
     volumes:
@@ -143,7 +143,7 @@ services:
     command: ["sh", "-c", "chown -R 33:33 /execution /uploads"]
     restart: "no"
 
-  # ── Pinokio (Chromium gateway) ──
+  # Pinokio (Chromium gateway)
   pinokio:
     build:
       context: ../pinokio
@@ -157,7 +157,7 @@ services:
     environment:
       TOKEN: "${PINOKIO_TOKEN:-}"
 
-  # ── PostgreSQL ──
+  # PostgreSQL
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
@@ -173,7 +173,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Redis ──
+  # Redis
   redis:
     image: redis:8-alpine
     restart: unless-stopped
