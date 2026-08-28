@@ -74,11 +74,9 @@ final class PuppeteerRuntimeExporter
 
         /** @var list<array{id: string, name: string, provider: string, token: string|null, chat_id: string|null}> $channels */
         foreach ($channels as $channel) {
-            foreach (['token', 'chat_id'] as $credential) {
-                $value = $channel[$credential] ?? null;
-                if (is_string($value) && $value !== '') {
-                    $secretValues[] = $value;
-                }
+            $token = $channel['token'] ?? null;
+            if (is_string($token) && $token !== '') {
+                $secretValues[] = $token;
             }
         }
         $secretValues = array_values(array_unique($secretValues));

@@ -48,6 +48,7 @@ export interface ScalarNodeParameterValue {
 export interface ObjectNodeParameterField {
     id: string;
     key: string;
+    keyMode?: NodeParameterMode;
     valueType?: ObjectFieldValueType;
     value: NodeParameterValue;
 }

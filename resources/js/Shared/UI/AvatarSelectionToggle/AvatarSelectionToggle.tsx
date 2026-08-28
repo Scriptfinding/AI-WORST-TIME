@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { Icon } from '@/Shared/UI/Icon/Icon';
 import * as S from './styled';
 
 interface Props {
@@ -27,8 +26,12 @@ export default function AvatarSelectionToggle({
             />
             <S.Frame $size={size} $selected={selected}>
                 <S.Avatar $selected={selected}>{children}</S.Avatar>
-                <S.Checkbox $selected={selected}>
-                    {selected && <Icon icon="lucide:check" width={size * 0.5} height={size * 0.5} />}
+                <S.Checkbox $selected={selected} $size={size}>
+                    {selected && (
+                        <svg width={size * 0.6} height={size * 0.6} viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                    )}
                 </S.Checkbox>
             </S.Frame>
         </S.Label>

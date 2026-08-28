@@ -3,7 +3,7 @@ import { createInertiaApp, router } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
 import { ThemeModeProvider } from './Hooks/useThemeMode';
 import { ToastProvider } from './Hooks/useToast';
-import PageOnboardingModal from './Onboarding/PageOnboardingModal';
+import PageOnboardingProvider from './Onboarding/PageOnboardingModal';
 import { getAppPageBranding, syncAppPage } from './Utils/appPage';
 import { GlobalStyles } from './Utils/globalStyles';
 import { GrabberProvider } from '@/Domains/Flow/Pages/FlowEditor/Grabber/GrabberContext';
@@ -101,9 +101,9 @@ createInertiaApp({
                         chromeStoreUrl={grabberChromeStoreUrl}
                         firefoxStoreUrl={grabberFirefoxStoreUrl}
                     >
-                        <PageOnboardingModal initialPage={props.initialPage}>
+                        <PageOnboardingProvider initialPage={props.initialPage}>
                             <App {...props} />
-                        </PageOnboardingModal>
+                        </PageOnboardingProvider>
                     </GrabberProvider>
                 </ToastProvider>
             </ThemeModeProvider>

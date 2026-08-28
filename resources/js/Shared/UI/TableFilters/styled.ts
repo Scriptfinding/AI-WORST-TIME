@@ -4,18 +4,22 @@ export const DropdownWrapper = styled.div`
     position: relative;
 `;
 
-export const DropdownTrigger = styled.button<{ $open?: boolean }>`
+export const DropdownTrigger = styled.button<{ $open?: boolean; $iconOnly?: boolean }>`
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    padding: 7px 10px;
-    font-size: 13px;
+    padding: ${({ $iconOnly }) => $iconOnly ? '5px 6px' : '7px 10px'};
+    font-size: ${({ $iconOnly }) => $iconOnly ? '11px' : '13px'};
     border: 1px solid ${({ theme, $open }) => $open ? theme.colors.accent.primary : theme.colors.border.default};
-    border-radius: ${({ theme }) => theme.radius.md};
-    background: ${({ theme }) => theme.colors.bg.primary};
+    border-radius: ${({ theme, $iconOnly }) => $iconOnly ? theme.radius.sm : theme.radius.md};
+    background: ${({ theme, $iconOnly }) => $iconOnly ? theme.colors.bg.secondary : theme.colors.bg.primary};
     color: ${({ theme }) => theme.colors.text.primary};
     cursor: pointer;
-    min-width: 160px;
+    box-sizing: border-box;
+    min-width: ${({ $iconOnly }) => $iconOnly ? '26px' : '160px'};
+    width: ${({ $iconOnly }) => $iconOnly ? '26px' : 'auto'};
+    height: ${({ $iconOnly }) => $iconOnly ? '26px' : 'auto'};
     white-space: nowrap;
 
     &:hover {
@@ -31,10 +35,10 @@ export const DropdownTrigger = styled.button<{ $open?: boolean }>`
     }
 `;
 
-export const DropdownPanel = styled.div<{ $shadow?: string }>`
+export const DropdownPanel = styled.div<{ $shadow?: string; $align?: 'left' | 'right' }>`
     position: absolute;
     top: calc(100% + 4px);
-    right: 0;
+    ${({ $align = 'right' }) => $align === 'left' ? 'left: 0;' : 'right: 0;'}
     min-width: 220px;
     background: ${({ theme }) => theme.colors.bg.secondary};
     border: 1px solid ${({ theme }) => theme.colors.border.default};

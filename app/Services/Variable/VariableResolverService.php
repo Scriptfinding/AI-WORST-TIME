@@ -44,30 +44,23 @@ class VariableResolverService
             ->get(['id', 'key', 'value', 'type', 'scope', 'user_id', 'vault_integration_id', 'vault_field_type'])
             ->all();
 
-        if ($secretValues !== null) {
-            foreach ($variables as $var) {
-                /** @var UserVariable $var */
-                if ($var->type === 'secret' || $this->typeResolverChain->isSecret($var->type)) {
-                    $secretValues[] = $var->value;
-                }
-            }
-            $secretValues = array_values(array_unique($secretValues));
-        }
-
         $scalarMap = [];
+        $secretMap = [];
         foreach ($variables as $var) {
             /** @var UserVariable $var */
             if ($this->typeResolverChain->supports($var->type)) {
                 $resolved = $this->typeResolverChain->resolveValue($var, $workspaceId);
                 if ($resolved !== null) {
                     $scalarMap[$var->id] = $resolved;
-                    if ($secretValues !== null) {
-                        $secretValues[] = $resolved;
-                        $secretValues = array_values(array_unique($secretValues));
+                    if ($this->typeResolverChain->isSecret($var->type)) {
+                        $secretMap[$var->id] = [$resolved];
                     }
                 }
             } elseif (! in_array($var->type, ['object', 'array', 'json'], true)) {
                 $scalarMap[$var->id] = $var->value;
+                if ($var->type === 'secret' && $var->value !== '') {
+                    $secretMap[$var->id] = [$var->value];
+                }
             }
         }
 
@@ -76,6 +69,13 @@ class VariableResolverService
         foreach ($variables as $var) {
             /** @var UserVariable $var */
             if (in_array($var->type, ['object', 'array', 'json'], true)) {
+                $dependencies = $this->variableReferences($var->value);
+                $secretMap[$var->id] = array_values(array_unique(array_merge(
+                    ...array_map(
+                        fn (string $reference): array => $secretMap[explode('.', $reference, 2)[0]] ?? [],
+                        $dependencies,
+                    ),
+                )));
                 $resolvedJson = $this->resolveStringVars($var->value, $scalarMap);
                 $decoded = json_decode($resolvedJson, true);
                 if (is_array($decoded)) {
@@ -87,12 +87,22 @@ class VariableResolverService
             }
         }
 
+        if ($secretValues !== null) {
+            foreach ($this->variableReferences($input) as $reference) {
+                $secretValues = [
+                    ...$secretValues,
+                    ...($secretMap[explode('.', $reference, 2)[0]] ?? []),
+                ];
+            }
+            $secretValues = array_values(array_unique($secretValues));
+        }
+
         $resolved = $this->resolveRecursive($input, $flat);
 
         return is_array($resolved) ? $resolved : $input;
     }
 
-    /** @return array<string, array{value: string|null, vault_field_type: string|null, label: string}> */
+    /** @return array<string, array{value: string|null, vault_field_type: string|null, label: string, is_secret: bool}> */
     public function buildVarsEnv(?string $userId, string $workspaceId, bool $allAccess = false): array
     {
         if (! $allAccess && ! app(FeatureFlagService::class)->enabled('variables_enabled')) {
@@ -110,7 +120,10 @@ class VariableResolverService
             $entry = $this->typeResolverChain->supports($var->type)
                 ? $this->typeResolverChain->buildEnvEntry($var, $workspaceId)
                 : ['value' => $var->value, 'vault_field_type' => null];
-            $map[$var->id] = array_merge($entry, ['label' => $var->key]);
+            $map[$var->id] = array_merge($entry, [
+                'label' => $var->key,
+                'is_secret' => $var->type === 'secret' || $this->typeResolverChain->isSecret($var->type),
+            ]);
         }
 
         return $map;
@@ -234,6 +247,21 @@ class VariableResolverService
         }
 
         return is_scalar($value) || $value === null ? (string) $value : '';
+    }
+
+    /** @return list<string> */
+    private function variableReferences(mixed $value): array
+    {
+        $references = [];
+        $this->walkStrings($value, function (string $item) use (&$references): void {
+            if (preg_match_all('/\$\{vars\.([^}]+)\}/', $item, $matches) > 0) {
+                foreach ($matches[1] as $reference) {
+                    $references[] = $reference;
+                }
+            }
+        });
+
+        return array_values(array_unique($references));
     }
 
     /** @param callable(string): void $callback */

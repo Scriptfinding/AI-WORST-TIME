@@ -102,6 +102,12 @@ export const ExpressionCodeEditor = styled.div<{ $renderVisible?: boolean; $code
         white-space: pre;
     }
 
+    /* The slim 6px scrollbar of small inputs gets fully rounded ends;
+       real code editors keep Monaco's default square slider. */
+    .monaco-scrollable-element > .scrollbar.vertical > .slider {
+        border-radius: ${({ $codeInput }) => ($codeInput ? '0' : '3px')};
+    }
+
     .nop-template-token {
         color: ${({ theme }) => theme.colors.accent.success} !important;
         background: ${({ theme }) => theme.colors.accent.successBg};

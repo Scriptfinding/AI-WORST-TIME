@@ -9,9 +9,7 @@ export const Card = styled.section`
     padding: 18px 20px;
     border: 1px solid ${({ theme }) => theme.colors.border.default};
     border-radius: ${({ theme }) => theme.radius.lg};
-    background:
-        radial-gradient(circle at 8% 10%, color-mix(in srgb, ${({ theme }) => theme.colors.accent.primary} 12%, transparent), transparent 28%),
-        ${({ theme }) => theme.colors.bg.secondary};
+    background: ${({ theme }) => theme.colors.bg.secondary};
 
     @media (max-width: 640px) {
         grid-template-columns: auto minmax(0, 1fr);
@@ -28,7 +26,6 @@ export const Visual = styled.div`
     place-items: center;
     width: 46px;
     height: 46px;
-    border: 1px solid color-mix(in srgb, ${({ theme }) => theme.colors.accent.primary} 30%, transparent);
     border-radius: 15px;
     background: color-mix(in srgb, ${({ theme }) => theme.colors.accent.primary} 12%, transparent);
     color: ${({ theme }) => theme.colors.accent.primary};

@@ -10,20 +10,75 @@ const ACCENTS: Record<OnboardingAccent, { main: string; soft: string; glow: stri
     violet: { main: '#9b7cf8', soft: '#9b7cf820', glow: '#9b7cf855' },
 };
 
+export const Jumbo = styled.section<{ $accent: OnboardingAccent; $inset: boolean }>`
+    --onboarding-accent: ${({ $accent }) => ACCENTS[$accent].main};
+    --onboarding-soft: ${({ $accent }) => ACCENTS[$accent].soft};
+    --onboarding-glow: ${({ $accent }) => ACCENTS[$accent].glow};
+    position: relative;
+    flex: 0 0 auto;
+    margin: ${({ $inset }) => ($inset ? '24px 24px 20px' : '0 0 24px')};
+    padding: 20px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--onboarding-accent) 28%, ${({ theme }) => theme.colors.border.default});
+    border-radius: ${({ theme }) => theme.radius.lg};
+    background:
+        linear-gradient(120deg, var(--onboarding-soft), transparent 46%),
+        ${({ theme }) => theme.colors.bg.secondary};
+
+    @media (max-width: 768px) {
+        margin: ${({ $inset }) => ($inset ? '16px 16px 18px' : '0 0 18px')};
+        padding: 16px;
+    }
+`;
+
+export const CloseButton = styled.button`
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: ${({ theme }) => theme.colors.text.tertiary};
+    transition: color 150ms ease, background 150ms ease, border-color 150ms ease;
+
+    &:hover {
+        border-color: ${({ theme }) => theme.colors.border.default};
+        background: ${({ theme }) => theme.colors.bg.primary};
+        color: ${({ theme }) => theme.colors.text.primary};
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--onboarding-accent);
+        outline-offset: 2px;
+    }
+`;
+
 export const Experience = styled.div<{ $layout: OnboardingLayout; $accent: OnboardingAccent }>`
     --onboarding-accent: ${({ $accent }) => ACCENTS[$accent].main};
     --onboarding-soft: ${({ $accent }) => ACCENTS[$accent].soft};
     --onboarding-glow: ${({ $accent }) => ACCENTS[$accent].glow};
-    display: ${({ $layout }) => ($layout === 'split' || $layout === 'poster' ? 'grid' : 'flex')};
-    grid-template-columns: ${({ $layout }) => ($layout === 'poster' ? '1fr 210px' : '210px 1fr')};
-    grid-template-areas: ${({ $layout }) => ($layout === 'poster' ? '"copy media"' : '"media copy"')};
-    flex-direction: column;
-    gap: ${({ $layout }) => ($layout === 'hero' ? '20px' : '18px')};
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    grid-template-areas: "media copy";
+    gap: 22px;
+    align-items: stretch;
     min-width: 0;
 
-    @media (max-width: 680px) {
-        display: flex;
-        flex-direction: column;
+    @media (max-width: 840px) {
+        grid-template-columns: 132px minmax(0, 1fr);
+        gap: 18px;
+    }
+
+    @media (max-width: 620px) {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "media"
+            "copy";
     }
 `;
 
@@ -33,7 +88,7 @@ export const Media = styled.div<{ $layout: OnboardingLayout }>`
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: ${({ $layout }) => ($layout === 'hero' ? '150px' : '210px')};
+    min-height: 100%;
     overflow: hidden;
     border: 1px solid color-mix(in srgb, var(--onboarding-accent) 32%, transparent);
     border-radius: ${({ theme }) => theme.radius.lg};
@@ -42,6 +97,10 @@ export const Media = styled.div<{ $layout: OnboardingLayout }>`
         radial-gradient(circle at 78% 80%, var(--onboarding-soft), transparent 38%),
         linear-gradient(145deg, ${({ theme }) => theme.colors.bg.primary}, ${({ theme }) => theme.colors.bg.secondary});
     isolation: isolate;
+
+    @media (max-width: 620px) {
+        min-height: 116px;
+    }
 
     &::before {
         content: '';
@@ -194,33 +253,28 @@ export const Confetti = styled.i<{ $index: number }>`
 export const Copy = styled.div`
     grid-area: copy;
     min-width: 0;
+    padding: 2px 42px 2px 0;
+
+    @media (max-width: 620px) {
+        padding: 0;
+    }
 `;
 
-export const MarketingLine = styled.h2`
-    position: relative;
-    margin: 0 auto 18px;
-    padding-bottom: 13px;
-    max-width: 560px;
+export const Title = styled.h2`
+    margin: 0;
     color: ${({ theme }) => theme.colors.text.primary};
-    font-size: clamp(20px, 2.4vw, 26px);
+    font-size: 20px;
     font-weight: 700;
-    letter-spacing: -0.035em;
-    line-height: 1.16;
-    text-align: center;
-    text-wrap: balance;
+    letter-spacing: -.025em;
+    line-height: 1.25;
+`;
 
-    &::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        width: 42px;
-        height: 3px;
-        border-radius: 999px;
-        background: var(--onboarding-accent);
-        box-shadow: 0 0 16px var(--onboarding-glow);
-        transform: translateX(-50%);
-    }
+export const MarketingLine = styled.p`
+    margin: 4px 0 12px;
+    color: ${({ theme }) => theme.colors.text.primary};
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.45;
 `;
 
 export const Intro = styled.p`
@@ -230,27 +284,21 @@ export const Intro = styled.p`
     line-height: 1.6;
 `;
 
-export const Highlights = styled.ol<{ $layout: OnboardingLayout }>`
+export const Highlights = styled.ol`
     display: grid;
-    grid-template-columns: ${({ $layout }) => ($layout === 'cards' ? 'repeat(3, minmax(0, 1fr))' : '1fr')};
-    gap: ${({ $layout }) => ($layout === 'cards' ? '8px' : '9px')};
-    margin: 18px 0;
+    grid-template-columns: 1fr;
+    gap: 9px;
+    margin: 14px 0;
     padding: 0;
     list-style: none;
-
-    @media (max-width: 680px) {
-        grid-template-columns: 1fr;
-    }
 `;
 
-export const Highlight = styled.li<{ $layout: OnboardingLayout }>`
+export const Highlight = styled.li`
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    padding: ${({ $layout }) => ($layout === 'cards' ? '11px' : '2px 0')};
-    border: ${({ $layout, theme }) => ($layout === 'cards' ? `1px solid ${theme.colors.border.default}` : '0')};
+    padding: 2px 0;
     border-radius: ${({ theme }) => theme.radius.md};
-    background: ${({ $layout, theme }) => ($layout === 'cards' ? theme.colors.bg.primary : 'transparent')};
     color: ${({ theme }) => theme.colors.text.primary};
     font-size: 13px;
     line-height: 1.5;
@@ -276,8 +324,12 @@ export const Highlight = styled.li<{ $layout: OnboardingLayout }>`
 `;
 
 export const NextStep = styled.div`
-    padding: 12px 14px;
-    border: 1px solid ${({ theme }) => theme.colors.border.default};
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 154px 12px 14px;
     border-radius: ${({ theme }) => theme.radius.md};
     background: linear-gradient(90deg, var(--onboarding-soft), transparent 70%);
     color: ${({ theme }) => theme.colors.text.secondary};
@@ -287,18 +339,20 @@ export const NextStep = styled.div`
     strong {
         color: ${({ theme }) => theme.colors.text.primary};
     }
-`;
 
-export const Footer = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    width: 100%;
+    @media (max-width: 720px) {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+        padding-right: 14px;
+    }
 `;
 
 export const DisableButton = styled.button`
-    padding: 6px 0;
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    padding: 3px 0;
     color: ${({ theme }) => theme.colors.text.tertiary};
     font-size: 12px;
     text-decoration: underline;
@@ -310,4 +364,5 @@ export const DisableButton = styled.button`
         color: ${({ theme }) => theme.colors.text.secondary};
         text-decoration-color: currentColor;
     }
+
 `;

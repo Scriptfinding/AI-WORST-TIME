@@ -1,26 +1,29 @@
 import styled from 'styled-components';
 
-export const Container = styled.div`
-    margin-top: 18px;
+export const Container = styled.div<{ $compact?: boolean }>`
+    margin-top: ${({ $compact }) => $compact ? 0 : '18px'};
 `;
 
-export const Toolbar = styled.div`
+export const Toolbar = styled.div<{ $compact?: boolean }>`
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: ${({ $compact }) => $compact ? '6px' : '8px'};
+    flex-wrap: ${({ $compact }) => $compact ? 'nowrap' : 'wrap'};
 `;
 
-export const SearchBar = styled.div`
+export const SearchBar = styled.div<{ $compact?: boolean }>`
     display: flex;
+    flex: ${({ $compact }) => $compact ? 1 : 'initial'};
     align-items: center;
     gap: 6px;
-    min-width: 200px;
-    max-width: 280px;
-    padding: 6px 10px;
+    min-width: ${({ $compact }) => $compact ? 0 : '200px'};
+    max-width: ${({ $compact }) => $compact ? 'none' : '280px'};
+    height: ${({ $compact }) => $compact ? '26px' : 'auto'};
+    padding: ${({ $compact }) => $compact ? '5px 8px' : '6px 10px'};
+    box-sizing: border-box;
     border: 1px solid ${({ theme }) => theme.colors.border.default};
-    border-radius: ${({ theme }) => theme.radius.md};
-    background: ${({ theme }) => theme.colors.bg.primary};
+    border-radius: ${({ theme, $compact }) => $compact ? theme.radius.sm : theme.radius.md};
+    background: ${({ theme, $compact }) => $compact ? theme.colors.bg.secondary : theme.colors.bg.primary};
     color: ${({ theme }) => theme.colors.text.tertiary};
     transition: border-color ${({ theme }) => theme.transition.fast};
 
@@ -29,14 +32,14 @@ export const SearchBar = styled.div`
     }
 `;
 
-export const SearchInput = styled.input`
+export const SearchInput = styled.input<{ $compact?: boolean }>`
     flex: 1;
     min-width: 0;
     border: none;
     outline: none;
     background: transparent;
     color: ${({ theme }) => theme.colors.text.primary};
-    font-size: 13px;
+    font-size: ${({ $compact }) => $compact ? '11px' : '13px'};
 
     &::placeholder {
         color: ${({ theme }) => theme.colors.text.tertiary};
@@ -63,7 +66,10 @@ export const SortButton = styled.button`
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    width: 26px;
+    height: 26px;
     padding: 4px;
+    box-sizing: border-box;
     background: ${({ theme }) => theme.colors.bg.secondary};
     border: 1px solid ${({ theme }) => theme.colors.border.default};
     border-radius: ${({ theme }) => theme.radius.sm};

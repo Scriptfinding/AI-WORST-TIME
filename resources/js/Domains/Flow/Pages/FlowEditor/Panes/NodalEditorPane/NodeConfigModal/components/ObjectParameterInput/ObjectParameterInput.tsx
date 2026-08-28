@@ -80,9 +80,14 @@ export default function ObjectParameterInput({
         if (!fieldId) return;
 
         const frameId = window.requestAnimationFrame(() => {
-            const input = objectFieldRef.current?.querySelector<HTMLInputElement>(
+            // The marker sits on the key input itself (function maps) or on
+            // the wrapper hosting the key ExpressionInput.
+            const target = objectFieldRef.current?.querySelector<HTMLElement>(
                 `[data-object-key-input="${fieldId}"]`,
             );
+            const input = target instanceof HTMLInputElement
+                ? target
+                : target?.querySelector<HTMLInputElement>('input');
 
             if (!input) return;
 

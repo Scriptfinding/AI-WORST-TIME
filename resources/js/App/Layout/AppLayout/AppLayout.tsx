@@ -4,6 +4,7 @@ import { router } from '@inertiajs/react';
 import Sidebar from '@/App/Layout/Sidebar/Sidebar';
 import { useAuth, useFlash, usePageProps } from '@/App/Hooks/usePageProps';
 import { useToast } from '@/App/Hooks/useToast';
+import { PageOnboardingJumbo } from '@/App/Onboarding/PageOnboardingModal';
 import { usePageTitle } from '@/App/Utils/documentTitle';
 import { formatDateTime } from '@/Shared/Utils/formatDate';
 import * as S from './styled';
@@ -115,7 +116,10 @@ export default function AppLayout({ title, headerRight, noPadding, children }: A
                         </S.BurgerButton>
                     </S.MobileMenuBar>
                 )}
-                <S.Content $noPadding={noPadding}>{children}</S.Content>
+                <S.Content $noPadding={noPadding}>
+                    <PageOnboardingJumbo inset={noPadding} />
+                    {children}
+                </S.Content>
             </S.Main>
         </S.Container>
     );

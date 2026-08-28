@@ -59,6 +59,9 @@ export const normalizeParameterValue = (value: RawNodeParameterValue | unknown):
                 return {
                     id: typeof source.id === 'string' ? source.id : `field-${index}`,
                     key: typeof source.key === 'string' ? source.key : '',
+                    keyMode: source.keyMode === 'fixed' || source.keyMode === 'expression'
+                        ? source.keyMode
+                        : undefined,
                     valueType: typeof source.valueType === 'string' && ['string', 'number', 'dateTime', 'boolean', 'array', 'object'].includes(source.valueType)
                         ? source.valueType as IfConditionCategory
                         : undefined,
@@ -397,7 +400,15 @@ export const formatParameterForCompiler = (
 
         if (fields.length === 0) return '{}';
 
-        return `{ ${fields.map(field => `${JSON.stringify(field.key)}: ${formatTypedFieldForCompiler(field.value, field.valueType, options)}`).join(', ')} }`;
+        // Keys holding {{ }} templates compile to computed properties so the
+        // property name is rendered at runtime like any expression value.
+        const formatFieldKey = (key: string) => {
+            if (!key.includes('{{')) return JSON.stringify(key);
+            const rendered = `$renderExpression(${JSON.stringify(key)})`;
+            return `[${options.awaitExpressions ? `await ${rendered}` : rendered}]`;
+        };
+
+        return `{ ${fields.map(field => `${formatFieldKey(field.key)}: ${formatTypedFieldForCompiler(field.value, field.valueType, options)}`).join(', ')} }`;
     }
 
     if (normalized.mode === 'expression') {

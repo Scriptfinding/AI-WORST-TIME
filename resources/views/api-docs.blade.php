@@ -340,55 +340,54 @@
         .swagger-ui ::-webkit-scrollbar-track { background: var(--bg); }
         .swagger-ui ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
 
-        .onboarding-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            background: var(--backdrop);
-            backdrop-filter: blur(4px);
-        }
-        .onboarding-overlay[hidden] { display: none; }
-        .onboarding-dialog {
-            width: min(520px, 100%);
+        .onboarding-jumbo {
+            position: relative;
+            display: grid;
+            grid-template-columns: 180px minmax(0, 1fr);
+            gap: 22px;
+            margin: 24px;
+            padding: 20px;
             overflow: hidden;
-            border: 1px solid var(--border);
+            border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
             border-radius: 12px;
-            background: var(--bg-raised);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, .3);
+            background:
+                linear-gradient(120deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 46%),
+                var(--bg-raised);
             color: var(--text);
         }
-        .onboarding-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 16px;
-            padding: 14px 20px;
-            border-bottom: 1px solid var(--border);
-        }
-        .onboarding-title { margin: 0; font-size: 15px; }
-        .onboarding-caption { margin-top: 3px; color: var(--text-muted); font-size: 12px; }
+        .onboarding-jumbo[hidden] { display: none; }
         .onboarding-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 2;
+            display: grid;
+            place-items: center;
+            width: 32px;
+            height: 32px;
             border: 0;
+            border-radius: 10px;
             background: transparent;
             color: var(--text-muted);
             cursor: pointer;
             font-size: 20px;
             line-height: 1;
         }
-        .onboarding-body { padding: 20px; }
-        .onboarding-marketing {
-            margin: 0 auto 18px;
-            max-width: 500px;
+        .onboarding-close:hover { background: var(--bg); color: var(--text); }
+        .onboarding-copy { min-width: 0; padding-right: 38px; }
+        .onboarding-title {
+            margin: 0;
             color: var(--text);
-            font-size: clamp(20px, 3vw, 26px);
-            font-weight: 700;
-            letter-spacing: -.035em;
-            line-height: 1.16;
-            text-align: center;
+            font-size: 20px;
+            letter-spacing: -.025em;
+            line-height: 1.25;
+        }
+        .onboarding-marketing {
+            margin: 4px 0 12px;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.45;
         }
         .onboarding-media {
             position: relative;
@@ -396,8 +395,7 @@
             align-items: center;
             justify-content: center;
             gap: 28px;
-            height: 116px;
-            margin-bottom: 18px;
+            min-height: 100%;
             overflow: hidden;
             border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
             border-radius: 12px;
@@ -431,24 +429,29 @@
             border-color: var(--accent);
             transform: rotate(-5deg);
         }
-        .onboarding-body p {
+        .onboarding-copy p {
             margin: 0;
             color: var(--text-muted);
             font-size: 14px;
             line-height: 1.6;
         }
-        .onboarding-body ul {
+        .onboarding-copy ul {
             display: grid;
-            gap: 10px;
-            margin: 18px 0;
+            grid-template-columns: 1fr;
+            gap: 9px;
+            margin: 14px 0;
             padding-left: 20px;
             color: var(--text);
             font-size: 13px;
             line-height: 1.5;
         }
         .onboarding-next {
-            padding: 12px 14px;
-            border: 1px solid var(--border);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 12px 154px 12px 14px;
             border-radius: 8px;
             background: var(--bg);
             color: var(--text-muted);
@@ -456,15 +459,11 @@
             line-height: 1.5;
         }
         .onboarding-next strong { color: var(--text); }
-        .onboarding-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 12px 20px;
-            border-top: 1px solid var(--border);
-        }
         .onboarding-disable {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            padding: 3px 0;
             border: 0;
             background: transparent;
             color: var(--text-muted);
@@ -472,15 +471,20 @@
             font-size: 12px;
         }
         .onboarding-disable:hover { color: var(--text); text-decoration: underline; }
-        .onboarding-primary {
-            padding: 8px 14px;
-            border: 0;
-            border-radius: 7px;
-            background: var(--accent);
-            color: #fff;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
+        @media (max-width: 720px) {
+            .onboarding-jumbo {
+                grid-template-columns: 1fr;
+                margin: 16px;
+                padding: 16px;
+            }
+            .onboarding-media { min-height: 116px; }
+            .onboarding-copy { padding-right: 0; }
+            .onboarding-next {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 8px;
+                padding-right: 14px;
+            }
         }
     </style>
     <script>
@@ -495,48 +499,6 @@
     </script>
 </head>
 <body>
-    <div
-        id="page-onboarding"
-        class="onboarding-overlay"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="onboarding-title"
-        @if ($onboardingVersion >= 3 || $onboardingDisabled) hidden @endif
-    >
-        <div class="onboarding-dialog">
-            <div class="onboarding-header">
-                <div>
-                    <h2 id="onboarding-title" class="onboarding-title">Use the API documentation</h2>
-                    <div class="onboarding-caption">First visit guide</div>
-                </div>
-                <button type="button" class="onboarding-close" aria-label="Close">&times;</button>
-            </div>
-            <div class="onboarding-body">
-                <h3 class="onboarding-marketing">
-                    Connect Puppetflow to any tool and let your automations travel further.
-                </h3>
-                <div class="onboarding-media" aria-hidden="true">
-                    <span class="onboarding-node">API</span>
-                    <span class="onboarding-node">↗</span>
-                    <span class="onboarding-node">{ }</span>
-                </div>
-                <p>This interactive reference explains how to connect external tools to Puppetflow.</p>
-                <ul>
-                    <li>Browse endpoints grouped by resource</li>
-                    <li>Review request parameters and response schemas</li>
-                    <li>Authorize with an API key and try requests</li>
-                </ul>
-                <div class="onboarding-next">
-                    <strong>Suggested first step:</strong> Create an API key from your profile, then use Authorize above.
-                </div>
-            </div>
-            <div class="onboarding-footer">
-                <button type="button" class="onboarding-disable">Don't show these messages</button>
-                <button type="button" class="onboarding-primary">Got it</button>
-            </div>
-        </div>
-    </div>
-
     <div class="toolbar">
         <a href="{{ route('profile') }}" class="back-link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
@@ -554,6 +516,36 @@
             </button>
         </div>
     </div>
+
+    <section
+        id="page-onboarding"
+        class="onboarding-jumbo"
+        aria-labelledby="onboarding-title"
+        @if ($onboardingVersion >= 3 || $onboardingDisabled) hidden @endif
+    >
+        <button type="button" class="onboarding-close" aria-label="Close introduction">&times;</button>
+        <div class="onboarding-media" aria-hidden="true">
+            <span class="onboarding-node">API</span>
+            <span class="onboarding-node">↗</span>
+            <span class="onboarding-node">{ }</span>
+        </div>
+        <div class="onboarding-copy">
+            <h2 id="onboarding-title" class="onboarding-title">Use the API documentation</h2>
+            <div class="onboarding-marketing">
+                Connect Puppetflow to any tool and let your automations travel further.
+            </div>
+            <p>This interactive reference explains how to connect external tools to Puppetflow.</p>
+            <ul>
+                <li>Browse endpoints grouped by resource</li>
+                <li>Review request parameters and response schemas</li>
+                <li>Authorize with an API key and try requests</li>
+            </ul>
+            <div class="onboarding-next">
+                <span><strong>Suggested first step:</strong> Create an API key from your profile, then use Authorize above.</span>
+            </div>
+        </div>
+        <button type="button" class="onboarding-disable">Skip all instructions</button>
+    </section>
 
     <div id="swagger-ui"></div>
     <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
@@ -628,17 +620,9 @@
             }
 
             onboarding.querySelector('.onboarding-close').addEventListener('click', completeOnboarding);
-            onboarding.querySelector('.onboarding-primary').addEventListener('click', completeOnboarding);
             onboarding.querySelector('.onboarding-disable').addEventListener('click', function() {
                 persistOnboarding('onboarding.disabled', 1);
             });
-            onboarding.addEventListener('click', function(event) {
-                if (event.target === onboarding) completeOnboarding();
-            });
-            document.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape') completeOnboarding();
-            });
-            onboarding.querySelector('.onboarding-primary').focus();
         })();
     </script>
 </body>

@@ -69,18 +69,38 @@ class DataTableController extends Controller
     {
         $this->authorizeDataTable($dataTable, Ability::VIEW);
         $perPage = min(max($request->integer('per_page', 50), 1), 100);
-        /** @var array{filters?: list<array{column_id: string, operator: string, value?: string|null}>} $validated */
+        /** @var array{filters?: list<array{column_id: string, operator: string, value?: string|null}>, sort_column?: string|null, sort_direction?: 'asc'|'desc'|null} $validated */
         $validated = $request->validate([
             'filters' => ['sometimes', 'array', 'max:20'],
             'filters.*.column_id' => ['required', 'string'],
             'filters.*.operator' => ['required', 'string', 'max:40'],
             'filters.*.value' => ['nullable', 'string', 'max:2000'],
+            'sort_column' => ['sometimes', 'nullable', 'string', 'max:128'],
+            'sort_direction' => ['nullable', Rule::in(['asc', 'desc'])],
         ]);
+        $sortColumn = array_key_exists('sort_column', $validated)
+            ? $validated['sort_column']
+            : 'id';
+        if (
+            $sortColumn !== null
+            && ! in_array($sortColumn, ['id', 'created_at', 'updated_at'], true)
+            && ! $dataTable->columns()->whereKey($sortColumn)->exists()
+        ) {
+            throw ValidationException::withMessages([
+                'sort_column' => 'The selected sort column is invalid.',
+            ]);
+        }
 
         return response()->json([
             'data_table' => $this->serialize($dataTable),
             'columns' => $dataTable->columns()->get(),
-            'rows' => $this->rows->paginate($dataTable, $perPage, $validated['filters'] ?? []),
+            'rows' => $this->rows->paginate(
+                $dataTable,
+                $perPage,
+                $validated['filters'] ?? [],
+                $sortColumn,
+                $validated['sort_direction'] ?? 'asc',
+            ),
         ]);
     }
 
@@ -129,7 +149,7 @@ class DataTableController extends Controller
     public function store(StoreDataTableRequest $request): JsonResponse
     {
         $workspaceId = $this->workspaceIdFromSession();
-        /** @var array{name: string, description?: string|null, visibility?: string, team_id?: string|null, user_id?: string|null} $validated */
+        /** @var array{name: string, description?: string|null, group?: string|null, visibility?: string, team_id?: string|null, user_id?: string|null} $validated */
         $validated = $request->validated();
         /** @var User $user */
         $user = $request->user();
@@ -148,6 +168,7 @@ class DataTableController extends Controller
             'team_id' => $teamId,
             'name' => $name,
             'description' => $description,
+            'group' => $validated['group'] ?? null,
             'visibility' => $visibility,
         ]);
         $dataTable->load(['user:id,name', 'team:id,name'])->loadCount('columns');
@@ -157,7 +178,7 @@ class DataTableController extends Controller
 
     public function update(UpdateDataTableRequest $request, DataTable $dataTable): JsonResponse
     {
-        /** @var array{name?: string, description?: string|null, visibility?: string, team_id?: string|null, user_id?: string|null} $validated */
+        /** @var array{name?: string, description?: string|null, group?: string|null, visibility?: string, team_id?: string|null, user_id?: string|null} $validated */
         $validated = $request->validated();
         $visibility = is_string($validated['visibility'] ?? null)
             ? $validated['visibility']

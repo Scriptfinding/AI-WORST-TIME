@@ -1,5 +1,4 @@
 import styled, { css, keyframes } from 'styled-components';
-import { checkboxStyles } from '@/Shared/UI/Checkbox/styles';
 import LocalTableFilterToolbar from '@/Shared/UI/TableFilters/LocalTableFilterToolbar';
 
 export const PanelFilterToolbar = styled(LocalTableFilterToolbar)`
@@ -83,8 +82,23 @@ export const PanelHeader = styled.header`
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 0 12px;
+    padding: 0 14px;
     border-bottom: 1px solid ${({ theme }) => theme.colors.border.default};
+`;
+
+export const PanelContextTitle = styled.span`
+    min-width: 0;
+    overflow: hidden;
+    color: ${({ theme }) => theme.colors.text.secondary};
+    font-size: 12px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+`;
+
+export const PanelContextCount = styled.span`
+    color: ${({ theme }) => theme.colors.text.tertiary};
+    font-size: 11px;
 `;
 
 export const PanelTitleWrap = styled.div`
@@ -107,13 +121,6 @@ export const PanelTitle = styled.h2`
 export const Count = styled.span`
     color: ${({ theme }) => theme.colors.text.tertiary};
     font-size: 10px;
-`;
-
-export const GridRowCount = styled(Count)`
-    display: inline-flex;
-    align-items: center;
-    align-self: center;
-    line-height: 1;
 `;
 
 export const IconButton = styled.button<{ $danger?: boolean; $active?: boolean }>`
@@ -146,43 +153,18 @@ export const HeaderActions = styled.div`
     gap: 6px;
 `;
 
-export const SearchWrap = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 8px 10px;
-    border-bottom: 1px solid ${({ theme }) => theme.colors.border.default};
-    color: ${({ theme }) => theme.colors.text.tertiary};
-`;
-
-export const SearchInput = styled.input`
-    min-width: 0;
-    flex: 1;
-    padding: 5px 7px;
-    border: 1px solid ${({ theme }) => theme.colors.border.default};
-    border-radius: ${({ theme }) => theme.radius.sm};
-    outline: none;
-    background: ${({ theme }) => theme.colors.bg.secondary};
-    color: ${({ theme }) => theme.colors.text.primary};
-    font-size: 11px;
-    &:focus { border-color: ${({ theme }) => theme.colors.border.focus}; }
-`;
-
-export const TableSelectAllCheckbox = styled.input`
-    ${checkboxStyles}
-`;
-
 export const List = styled.div`
     flex: 1;
     overflow-y: auto;
 `;
 
-const listRow = css<{ $active: boolean }>`
+const listRow = css<{ $active: boolean; $depth?: number }>`
     display: flex;
     width: 100%;
     align-items: center;
     gap: 8px;
     padding: 9px 11px;
+    padding-left: ${({ $depth = 0 }) => `${11 + $depth * 14}px`};
     border: 0;
     border-left: 3px solid ${({ $active, theme }) => $active ? theme.colors.accent.primary : 'transparent'};
     background: ${({ $active, theme }) => $active ? theme.colors.bg.hover : 'transparent'};
@@ -197,41 +179,57 @@ export const ListRow = styled.button<{ $active: boolean }>`
     ${listRow}
 `;
 
-export const TableIcon = styled.span`
-    display: inline-flex;
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-`;
-
-export const TableCheckbox = styled.input`
-    ${checkboxStyles}
-    display: none;
-`;
-
-export const TableListRow = styled.div<{ $active: boolean }>`
+export const TableListRow = styled.div<{ $active: boolean; $depth?: number }>`
     ${listRow}
+`;
 
-    &:has(${TableCheckbox}):hover ${TableIcon},
-    &:has(${TableCheckbox}:checked) ${TableIcon} {
-        display: none;
+export const FolderLabel = styled.button<{ $depth: number }>`
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    padding-left: ${({ $depth }) => `${14 + $depth * 14}px`};
+    border: none;
+    background: ${({ theme }) => theme.colors.bg.secondary};
+    color: ${({ theme }) => theme.colors.text.tertiary};
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-align: left;
+    text-transform: uppercase;
+    cursor: pointer;
+
+    &:hover {
+        background: ${({ theme }) => theme.colors.bg.tertiary};
+        color: ${({ theme }) => theme.colors.text.secondary};
     }
 
-    &:hover ${TableCheckbox},
-    ${TableCheckbox}:checked {
-        display: inline-grid;
+    svg {
+        flex-shrink: 0;
     }
+`;
+
+export const GroupCount = styled.span`
+    margin-left: auto;
+    color: ${({ theme }) => theme.colors.text.tertiary};
+    font-size: 10px;
+    opacity: 0.8;
 `;
 
 export const ScopeIcon = styled.span<{ $scope: string }>`
     display: inline-flex;
-    width: 23px;
-    height: 23px;
+    width: 22px;
+    height: 22px;
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
+    border: 1.5px solid ${({ $scope, theme }) => $scope === 'workspace'
+        ? `${theme.colors.accent.info}40`
+        : $scope === 'team' ? `${theme.colors.accent.success}40` : '#eab30840'};
     border-radius: 5px;
     background: ${({ $scope, theme }) => $scope === 'workspace'
         ? `${theme.colors.accent.info}18`
@@ -266,20 +264,37 @@ export const RowMeta = styled.span`
 
 export const RowActions = styled.span`
     display: none;
+    flex-shrink: 0;
     align-items: center;
     gap: 2px;
+    margin-left: 6px;
     ${ListRow}:hover &,
     ${TableListRow}:hover & {
         display: flex;
     }
 `;
 
-export const BareAction = styled.span<{ $danger?: boolean }>`
+export const BareAction = styled.button<{ $danger?: boolean }>`
     display: inline-flex;
-    padding: 3px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border: 0;
     border-radius: ${({ theme }) => theme.radius.xs};
-    color: ${({ $danger, theme }) => $danger ? theme.colors.accent.error : theme.colors.text.tertiary};
-    &:hover { background: ${({ theme }) => theme.colors.bg.hover}; }
+    background: transparent;
+    color: ${({ theme }) => theme.colors.text.tertiary};
+    cursor: pointer;
+    transition: all ${({ theme }) => theme.transition.fast};
+
+    &:hover {
+        background: ${({ $danger, theme }) => (
+        $danger ? theme.colors.accent.errorBg : `${theme.colors.accent.primary}15`
+    )};
+        color: ${({ $danger, theme }) => (
+        $danger ? theme.colors.accent.error : theme.colors.accent.primary
+    )};
+    }
 `;
 
 export const EmptyState = styled.div`
@@ -293,6 +308,10 @@ export const EmptyState = styled.div`
     line-height: 1.5;
     text-align: center;
     white-space: pre-line;
+`;
+
+const spin = keyframes`
+    to { transform: rotate(360deg); }
 `;
 
 export const GridToolbar = styled.div`
@@ -312,6 +331,16 @@ export const ToolbarGroup = styled.div`
     gap: 6px;
 `;
 
+export const RefreshButton = styled(IconButton)<{ $loading?: boolean }>`
+    flex: 0 0 auto;
+
+    ${({ $loading }) => $loading && css`
+        svg {
+            animation: ${spin} 0.7s linear infinite;
+        }
+    `}
+`;
+
 export const GridScroller = styled.div`
     position: relative;
     flex: 1;
@@ -326,11 +355,11 @@ export const GridTable = styled.table`
     border-collapse: separate;
     border-spacing: 0;
     color: ${({ theme }) => theme.colors.text.primary};
-    font-size: 12px;
+    font-size: 13px;
 `;
 
 const gridCell = css`
-    height: 34px;
+    height: 38px;
     padding: 0;
     border-right: 1px solid ${({ theme }) => theme.colors.border.default};
     border-bottom: 1px solid ${({ theme }) => theme.colors.border.default};
@@ -342,6 +371,7 @@ export const GridHeader = styled.th<{
     $system?: boolean;
     $compact?: boolean;
     $fill?: boolean;
+    $sortable?: boolean;
     $width?: number;
 }>`
     ${gridCell}
@@ -349,15 +379,16 @@ export const GridHeader = styled.th<{
     z-index: 3;
     top: 0;
     width: ${({ $compact, $fill, $system, $width }) => (
-        $fill ? 'auto' : $width ? `${$width}px` : $compact ? '1%' : $system ? '160px' : '200px'
+        $fill ? '80px' : $width ? `${$width}px` : $compact ? '1%' : $system ? '160px' : '200px'
     )};
     min-width: ${({ $compact, $fill, $system, $width }) => (
-        $fill ? '40px' : $width ? `${$width}px` : $compact ? '44px' : $system ? '160px' : '200px'
+        $fill ? '80px' : $width ? `${$width}px` : $compact ? '44px' : $system ? '160px' : '200px'
     )};
     background: ${({ theme }) => theme.colors.bg.secondary};
     color: ${({ theme }) => theme.colors.text.secondary};
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
+    cursor: ${({ $sortable }) => $sortable ? 'pointer' : 'default'};
 
     &:hover,
     &:focus-within,
@@ -375,16 +406,21 @@ export const SelectionHeader = styled(GridHeader)`
 `;
 
 export const HeaderContent = styled.div`
+    position: relative;
     display: flex;
     height: 100%;
     align-items: center;
     gap: 6px;
     padding: 0 9px;
+
+    > svg {
+        flex: 0 0 auto;
+    }
 `;
 
 export const AppendColumnHeaderContent = styled(HeaderContent)`
     justify-content: flex-start;
-    padding: 0 0 0 5px;
+    padding: 0 0 0 15px;
 `;
 
 export const ColumnResizeHandle = styled.button`
@@ -414,7 +450,7 @@ export const ColumnResizeHandle = styled.button`
     &:hover::after,
     &:focus-visible::after,
     &:active::after {
-        background: ${({ theme }) => theme.colors.brand};
+        background: ${({ theme }) => theme.colors.border.hardened};
     }
 `;
 
@@ -426,20 +462,33 @@ export const ColumnType = styled.span`
     color: ${({ theme }) => theme.colors.text.tertiary};
 `;
 
-export const ColumnName = styled.span`
+export const ColumnName = styled.span<{ $editable?: boolean }>`
     min-width: 0;
-    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    cursor: ${({ $editable }) => $editable ? 'text' : 'inherit'};
+`;
+
+export const HeaderSpacer = styled.span`
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
 `;
 
 export const ColumnActions = styled.span`
+    position: absolute;
+    top: 50%;
+    right: 7px;
     display: flex;
+    flex-shrink: 0;
     align-items: center;
     gap: 1px;
+    padding-left: 5px;
+    background: ${({ theme }) => theme.colors.bg.secondary};
     opacity: 0;
     pointer-events: none;
+    transform: translateY(-50%);
     transition: opacity ${({ theme }) => theme.transition.fast};
 
     ${GridHeader}:hover &,
@@ -486,7 +535,7 @@ export const ColumnFilterPopover = styled.div`
     position: absolute;
     z-index: 12;
     top: calc(100% + 5px);
-    right: 0;
+    left: 0;
     width: 260px;
     padding: 10px;
     border: 1px solid ${({ theme }) => theme.colors.border.default};
@@ -558,11 +607,12 @@ export const ColumnMenu = styled.span`
     position: absolute;
     z-index: 10;
     top: calc(100% + 4px);
-    right: 0;
+    left: 0;
     display: flex;
-    width: 132px;
+    min-width: 140px;
     flex-direction: column;
     gap: 2px;
+    overflow: hidden;
     padding: 4px;
     border: 1px solid ${({ theme }) => theme.colors.border.default};
     border-radius: ${({ theme }) => theme.radius.md};
@@ -574,21 +624,28 @@ export const ColumnMenuItem = styled.button<{ $danger?: boolean }>`
     display: flex;
     width: 100%;
     align-items: center;
-    gap: 7px;
-    padding: 7px 8px;
+    gap: 8px;
+    padding: 6px 10px;
     border: 0;
     border-radius: ${({ theme }) => theme.radius.sm};
     outline: none;
     background: transparent;
-    color: ${({ $danger, theme }) => $danger ? theme.colors.accent.error : theme.colors.text.secondary};
+    color: ${({ $danger, theme }) => $danger ? theme.colors.accent.error : theme.colors.text.primary};
     cursor: pointer;
     font: inherit;
-    font-size: 11px;
+    font-size: 12px;
+    font-weight: 400;
     text-align: left;
 
     &:hover,
     &:focus-visible {
-        background: ${({ theme }) => theme.colors.bg.hover};
+        background: ${({ $danger, theme }) => (
+        $danger ? theme.colors.accent.errorBg : theme.colors.bg.hover
+    )};
+    }
+
+    svg {
+        flex-shrink: 0;
     }
 `;
 
@@ -603,25 +660,24 @@ export const GridCell = styled.td<{
     ${gridCell}
     position: relative;
     z-index: ${({ $focused }) => $focused ? 4 : 'auto'};
+    outline: none;
     width: ${({ $compact, $fill, $system, $width }) => (
-        $fill ? 'auto' : $width ? `${$width}px` : $compact ? '1%' : $system ? '160px' : '200px'
+        $fill ? '80px' : $width ? `${$width}px` : $compact ? '1%' : $system ? '160px' : '200px'
     )};
     min-width: ${({ $compact, $fill, $system, $width }) => (
-        $fill ? '40px' : $width ? `${$width}px` : $compact ? '44px' : $system ? '160px' : '200px'
+        $fill ? '80px' : $width ? `${$width}px` : $compact ? '44px' : $system ? '160px' : '200px'
     )};
     background: ${({ $focused, $selected, theme }) => (
         $focused
             ? `${theme.colors.brand}1a`
             : $selected ? `${theme.colors.accent.primary}0d` : theme.colors.bg.primary
     )};
-    box-shadow: ${({ $focused, theme }) => (
-        $focused ? `inset 0 0 0 1px ${theme.colors.brand}` : 'none'
-    )};
+    box-shadow: none;
 
     &:focus-within {
         z-index: 4;
         background: ${({ theme }) => `${theme.colors.brand}1a`};
-        box-shadow: inset 0 0 0 1px ${({ theme }) => theme.colors.brand};
+        box-shadow: none;
     }
 `;
 
@@ -677,7 +733,7 @@ export const SelectionCheckbox = styled.button<{ $checked: boolean; $mixed: bool
 
 export const CellInput = styled.input`
     width: 100%;
-    height: 33px;
+    height: 37px;
     padding: 0 8px;
     border: 1px solid transparent;
     outline: none;
@@ -698,7 +754,7 @@ export const CellInput = styled.input`
 export const CellDisplay = styled.div<{ $disabled: boolean }>`
     display: flex;
     width: 100%;
-    height: 33px;
+    height: 37px;
     align-items: center;
     padding: 0 8px;
     cursor: ${({ $disabled }) => $disabled ? 'default' : 'pointer'};
@@ -748,7 +804,7 @@ export const CellInputActions = styled.div`
     top: 0;
     right: 5px;
     display: flex;
-    height: 33px;
+    height: 37px;
     align-items: center;
     gap: 1px;
 `;
@@ -803,7 +859,7 @@ export const CellTextarea = styled.textarea`
 
 export const BooleanCellWrap = styled.div<{ $disabled: boolean }>`
     display: flex;
-    height: 33px;
+    height: 37px;
     align-items: center;
     padding: 0 8px;
     cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
@@ -812,7 +868,7 @@ export const BooleanCellWrap = styled.div<{ $disabled: boolean }>`
 
 export const BooleanLabel = styled.span`
     color: ${({ theme }) => theme.colors.text.secondary};
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
 `;
 
@@ -831,12 +887,12 @@ export const BooleanEditor = styled.div`
 
 export const BooleanEditorValue = styled.div`
     display: flex;
-    height: 33px;
+    height: 37px;
     align-items: center;
     gap: 7px;
     padding: 0 8px;
     color: ${({ theme }) => theme.colors.text.primary};
-    font-size: 11px;
+    font-size: 12px;
 
     span {
         flex: 1;
@@ -879,7 +935,7 @@ export const BooleanEditorOption = styled.button<{ $active: boolean }>`
     color: ${({ theme }) => theme.colors.text.secondary};
     cursor: pointer;
     font: inherit;
-    font-size: 11px;
+    font-size: 12px;
     text-align: left;
 
     svg {
@@ -893,7 +949,7 @@ export const SystemValue = styled.span`
     padding: 0 8px;
     color: ${({ theme }) => theme.colors.text.tertiary};
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 10px;
+    font-size: 11px;
     text-overflow: ellipsis;
     white-space: nowrap;
 `;
@@ -946,10 +1002,6 @@ export const ErrorBanner = styled.div`
     background: ${({ theme }) => theme.colors.accent.errorBg};
     color: ${({ theme }) => theme.colors.accent.error};
     font-size: 11px;
-`;
-
-const spin = keyframes`
-    to { transform: rotate(360deg); }
 `;
 
 export const Loading = styled.div`
@@ -1124,8 +1176,10 @@ export const InlineForm = styled.form`
 `;
 
 export const InlineInput = styled.input`
+    width: 100%;
     min-width: 0;
     flex: 1;
+    box-sizing: border-box;
     padding: 6px 8px;
     border: 1px solid ${({ theme }) => theme.colors.border.focus};
     border-radius: ${({ theme }) => theme.radius.sm};

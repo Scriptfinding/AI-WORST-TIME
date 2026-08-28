@@ -68,6 +68,7 @@ export default function ExpressionInput({
     const isExpressionMode = value.mode === 'expression';
     const autocompleteOutputData = useMemo(() => asRecord(outputData), [outputData]);
     const {
+        fullscreenEditorRef,
         handleFixedTextareaEditorMount,
         handleFullscreenEditorMount,
         handleInlineEditorMount,
@@ -108,6 +109,8 @@ export default function ExpressionInput({
         inputType,
         outputData,
         value,
+        inlineEditorRef,
+        fullscreenEditorRef,
         refreshInlineExpressionCompletions,
         updateExpression,
     });
@@ -122,9 +125,11 @@ export default function ExpressionInput({
                 return;
             }
 
-            const input = fieldRef.current?.querySelector<HTMLElement>(
+            // Skip inputs belonging to a nested ExpressionInput (e.g. an
+            // object field name editor hosted in this field's header).
+            const input = Array.from(fieldRef.current?.querySelectorAll<HTMLElement>(
                 'input:not([type="hidden"]), textarea, select, [role="combobox"]',
-            );
+            ) ?? []).find(candidate => candidate.closest('[data-expression-field]') === fieldRef.current);
             if (input) {
                 input.focus();
                 return;
@@ -203,6 +208,7 @@ export default function ExpressionInput({
             $inlineLabel={inlineLabel}
             $invalid={invalid}
             data-invalid={invalid}
+            data-expression-field
             onDragOver={onDragOver}
             onDrop={onDrop}
         >

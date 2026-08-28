@@ -10,7 +10,7 @@ import type { FlowAction, WebhookHeader } from '@/Domains/Flow/types';
 import type { IntegrationScope } from '@/Domains/Integration/types';
 import type { ActionFormData, TeamOption } from '@/Domains/Flow/Pages/FlowEditor/Panes/ActionsPane/types';
 import ArtifactOverrides from '@/Domains/Flow/Pages/FlowEditor/Panes/ActionsPane/components/ArtifactOverrides/ArtifactOverrides';
-import GroupField from '@/Domains/Flow/Pages/FlowEditor/Panes/components/GroupField/GroupField';
+import GroupField from '@/Shared/UI/GroupField/GroupField';
 import WebhookHeaders from '@/Domains/Flow/Pages/FlowEditor/Panes/ActionsPane/components/WebhookHeaders/WebhookHeaders';
 import * as S from './styled';
 

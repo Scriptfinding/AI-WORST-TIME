@@ -100,7 +100,7 @@ export default function MailboxRow({
                         onClick={event => stopAndRun(event, onEdit)}
                         title="Edit mailbox"
                     >
-                        <Icon icon="lucide:settings" width={12} />
+                        <Icon icon="lucide:pencil" width={12} />
                     </S.ActionButton>
                     <S.ActionButton
                         $danger

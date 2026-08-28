@@ -1,4 +1,5 @@
 import { usePageProps } from '@/App/Hooks/usePageProps';
+import SelectAllVisible from '@/Shared/UI/TableFilters/SelectAllVisible';
 import type { Snippet } from '@/Domains/Snippet/types';
 import * as Layout from '@/Domains/Snippet/Pages/shared.styled';
 import GroupedSnippetList from './components/GroupedSnippetList/GroupedSnippetList';
@@ -39,6 +40,16 @@ export default function SnippetList({
         teams,
         workspaceSharingEnabled: settings?.workspace_sharing_enabled ?? false,
     });
+    const selectableIds = filters.filteredSnippets
+        .filter(snippet => isAdmin || snippet.user_id === currentUserId)
+        .map(snippet => snippet.id);
+    const allVisibleSelected = selectableIds.length > 0
+        && selectableIds.every(id => selectedIds.has(id));
+    const toggleAllVisible = () => {
+        selectableIds.forEach(id => {
+            if (selectedIds.has(id) === allVisibleSelected) onToggleSelected(id);
+        });
+    };
 
     return (
         <Layout.Panel $width="300px" $mobileHidden={mobileView !== 'list'}>
@@ -59,6 +70,13 @@ export default function SnippetList({
                 onSearchChange={filters.setSearch}
                 onShowInactiveChange={filters.setShowInactive}
             />
+            {selectableIds.length > 0 && (
+                <SelectAllVisible
+                    allSelected={allVisibleSelected}
+                    itemLabel="snippets"
+                    onToggle={toggleAllVisible}
+                />
+            )}
 
             <Layout.PanelBody>
                 {filters.filteredSnippets.length === 0 ? (

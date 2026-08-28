@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import ScopePicker from '@proprietary/Shared/UI/ScopePicker/ScopePicker.pp';
 import UserPicker from '@/Shared/UI/UserPicker/UserPicker';
 import Button from '@/Shared/UI/Button/Button';
+import GroupField from '@/Shared/UI/GroupField/GroupField';
 import Input from '@/Shared/UI/Input/Input';
 import Modal from '@/Shared/UI/Modal/Modal';
 import { useAuth } from '@/App/Hooks/usePageProps';
@@ -14,6 +15,7 @@ import * as S from './styled';
 
 interface Props {
     dataTable: DataTable | null;
+    groups: string[];
     isOpen: boolean;
     teams: { id: Id; name: string }[];
     submitting: boolean;
@@ -24,6 +26,7 @@ interface Props {
 
 export default function DataTableModal({
     dataTable,
+    groups,
     isOpen,
     teams,
     submitting,
@@ -34,6 +37,7 @@ export default function DataTableModal({
     const { user } = useAuth();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
+    const [group, setGroup] = useState('');
     const [scope, setScope] = useState<DataTableScope>('owner');
     const [teamId, setTeamId] = useState<Id | null>(null);
     const [ownerId, setOwnerId] = useState<Id | null>(null);
@@ -42,6 +46,7 @@ export default function DataTableModal({
         if (!isOpen) return;
         setName(dataTable?.name ?? '');
         setDescription(dataTable?.description ?? '');
+        setGroup(dataTable?.group ?? '');
         setScope(dataTable?.visibility ?? 'owner');
         setTeamId(dataTable?.team_id ?? null);
         setOwnerId(dataTable?.user_id ?? null);
@@ -60,6 +65,7 @@ export default function DataTableModal({
         await onSubmit({
             name: name.trim(),
             description: description.trim() || null,
+            group: group.trim() || null,
             visibility: scope,
             team_id: scope === 'team' ? teamId : null,
             user_id: ownerId,
@@ -94,6 +100,12 @@ export default function DataTableModal({
                         maxLength={500}
                     />
                 </S.Field>
+                <GroupField
+                    value={group}
+                    groups={groups}
+                    isModalOpen={isOpen}
+                    onChange={setGroup}
+                />
                 <ScopePicker
                     label="Visibility"
                     value={{ scope, team_id: teamId }}

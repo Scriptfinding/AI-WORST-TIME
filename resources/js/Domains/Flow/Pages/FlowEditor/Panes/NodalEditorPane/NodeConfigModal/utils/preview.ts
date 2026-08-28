@@ -51,6 +51,16 @@ const previewTypedFieldValue = (value: unknown, valueType: string | undefined) =
     }
 };
 
+// Field names may hold {{ }} templates; render them like expression values.
+const previewFieldKey = (key: string, scope: PreviewScope): string => {
+    if (!key.includes('{{')) return key;
+
+    const rendered = evaluateExpressionPreview(key, scope);
+    return rendered.ok && rendered.value !== null && rendered.value !== undefined
+        ? String(rendered.value)
+        : '';
+};
+
 export const previewParameterValue = (
     value: NodeParameterValue | undefined,
     scope: PreviewScope,
@@ -88,7 +98,7 @@ export const previewParameterValue = (
 
     return Object.fromEntries(
         value.fields
-            .map(field => [field.key.trim(), field.value, field.valueType] as const)
+            .map(field => [previewFieldKey(field.key.trim(), scope), field.value, field.valueType] as const)
             .filter(([key]) => Boolean(key))
             .map(([key, fieldValue, valueType]) => [
                 key,

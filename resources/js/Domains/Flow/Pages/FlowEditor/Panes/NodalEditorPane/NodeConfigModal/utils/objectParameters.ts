@@ -9,8 +9,8 @@ import type {
 import { normalizeParameterValue, normalizeScalarParameterValue } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/expression';
 
 export const OBJECT_INPUT_MODE_OPTIONS = [
-    { value: 'json', label: 'JSON' },
-    { value: 'form', label: 'Form' },
+    { value: 'json', label: 'JSON', icon: 'lucide:braces' },
+    { value: 'form', label: 'Form', icon: 'lucide:list-plus' },
 ];
 
 export const NESTED_OBJECT_FIELD_META: NodalParamDef = {
@@ -303,7 +303,7 @@ export function updateObjectField(
     value: ObjectNodeParameterValue,
     fields: ObjectNodeParameterField[],
     fieldId: string,
-    patch: Partial<Pick<ObjectNodeParameterField, 'key' | 'valueType' | 'value'>>,
+    patch: Partial<Pick<ObjectNodeParameterField, 'key' | 'keyMode' | 'valueType' | 'value'>>,
 ): ObjectNodeParameterValue {
     return {
         ...value,

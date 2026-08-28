@@ -64,7 +64,8 @@ const collectFormFieldPaths = (value: NodeParameterValue, prefix: string, paths:
 
     value.fields.forEach(field => {
         const key = field.key.trim();
-        if (!key) return;
+        // Template keys resolve at runtime and cannot become static paths.
+        if (!key || key.includes('{{')) return;
 
         const path = prefix ? `${prefix}.${key}` : key;
         addPath(paths, path);
@@ -347,10 +348,30 @@ const previewNodeValue = (
 
     return Object.fromEntries(
         value.fields
-            .map(field => [field.key.trim(), field.value, field.valueType] as const)
+            .map(field => [previewNodeFieldKey(field.key.trim(), scope), field.value, field.valueType] as const)
             .filter(([key]) => Boolean(key))
             .map(([key, fieldValue, valueType]) => [key, previewTypedFieldValue(previewNodeValue(fieldValue, scope), valueType)]),
     );
+};
+
+// Field names may hold {{ }} templates; render them like expression values.
+const previewNodeFieldKey = (
+    key: string,
+    scope: { inputData: Record<string, unknown> | null; outputData?: Record<string, unknown> | null; nodeData?: Record<string, unknown> | null; runData?: Record<string, unknown> | null; contextData?: Record<string, unknown> | null },
+): string => {
+    if (!key.includes('{{')) return key;
+
+    const rendered = evaluateExpressionPreview(key, {
+        inputData: scope.inputData,
+        outputData: scope.outputData ?? null,
+        nodeData: scope.nodeData ?? null,
+        runData: scope.runData ?? null,
+        contextData: scope.contextData ?? null,
+    });
+
+    return rendered.ok && rendered.value !== null && rendered.value !== undefined
+        ? String(rendered.value)
+        : '';
 };
 
 const previewTypedFieldValue = (value: unknown, valueType: ObjectFieldValueType | undefined) => {

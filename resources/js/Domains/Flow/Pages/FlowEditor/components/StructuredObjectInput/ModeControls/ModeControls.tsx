@@ -4,8 +4,8 @@ import CustomSelect from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/
 import * as S from './styled';
 
 const INPUT_MODE_OPTIONS = [
-    { value: 'json', label: 'JSON' },
-    { value: 'form', label: 'Form' },
+    { value: 'json', label: 'JSON', icon: 'lucide:braces' },
+    { value: 'form', label: 'Form', icon: 'lucide:list-plus' },
 ];
 
 interface ModeControlsProps {

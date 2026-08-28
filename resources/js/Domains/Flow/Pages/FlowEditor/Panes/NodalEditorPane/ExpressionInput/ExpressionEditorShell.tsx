@@ -2,7 +2,11 @@ import Editor, { type OnMount } from '@monaco-editor/react';
 import type { ScalarNodeParameterValue } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/types';
 import EditorActions from './EditorActions/EditorActions';
 import ExpressionPreview from './ExpressionPreview/ExpressionPreview';
-import { EXPRESSION_EDITOR_OPTIONS } from './utils';
+import {
+    EXPRESSION_EDITOR_OPTIONS,
+    EXPRESSION_MAX_HEIGHT,
+    EXPRESSION_OVERFLOW_SCROLLBAR_OPTIONS,
+} from './utils';
 import * as S from './ExpressionEditorShell.styled';
 import * as Shared from './shared.styled';
 
@@ -68,6 +72,9 @@ export default function ExpressionEditorShell({
                     defaultValue={value.value}
                     options={{
                         ...EXPRESSION_EDITOR_OPTIONS,
+                        ...(inlineEditorHeight >= EXPRESSION_MAX_HEIGHT
+                            ? EXPRESSION_OVERFLOW_SCROLLBAR_OPTIONS
+                            : {}),
                         readOnly,
                         domReadOnly: readOnly,
                     }}

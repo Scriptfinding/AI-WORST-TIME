@@ -38,6 +38,16 @@ export default function VariableTable({
     const { collapsedGroups, isGroupHidden, toggleGroup } = useCollapsedGroups(
         `variable-collapsed-groups:${user?.id ?? 'anonymous'}`,
     );
+    const selectableIds = variables.data
+        .filter(variable => variable.can_manage)
+        .map(variable => variable.id);
+    const allVisibleSelected = selectableIds.length > 0
+        && selectableIds.every(id => selectedIds.has(id));
+    const toggleAllVisible = () => {
+        selectableIds.forEach(id => {
+            if (selectedIds.has(id) === allVisibleSelected) onToggleSelected(id);
+        });
+    };
 
     return (
         <>
@@ -47,6 +57,13 @@ export default function VariableTable({
                 teams={teams}
                 workspaceSharingEnabled={settings?.workspace_sharing_enabled ?? false}
             />
+            {selectableIds.length > 0 && (
+                <S.SelectionBar
+                    allSelected={allVisibleSelected}
+                    itemLabel="variables"
+                    onToggle={toggleAllVisible}
+                />
+            )}
             {variables.data.length === 0 ? (
                 <S.Empty>
                     {filters.search || filters.group !== null || filters.scope

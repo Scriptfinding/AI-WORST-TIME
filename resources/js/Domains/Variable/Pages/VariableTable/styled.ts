@@ -1,4 +1,9 @@
 import styled from 'styled-components';
+import SelectAllVisible from '@/Shared/UI/TableFilters/SelectAllVisible';
+
+export const SelectionBar = styled(SelectAllVisible)`
+    border-bottom: 0;
+`;
 
 export const Empty = styled.div`
     text-align: center;

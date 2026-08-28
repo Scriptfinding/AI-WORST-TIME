@@ -3,6 +3,9 @@ import styled from 'styled-components';
 export const Label = styled.label`
     position: relative;
     display: inline-flex;
+    width: fit-content;
+    height: fit-content;
+    align-self: center;
     flex-shrink: 0;
     cursor: pointer;
 `;
@@ -50,9 +53,9 @@ export const Avatar = styled.span<{ $selected: boolean }>`
     }
 `;
 
-export const Checkbox = styled.span<{ $selected: boolean }>`
+export const Checkbox = styled.span<{ $selected: boolean; $size: number }>`
     position: absolute;
-    inset: 0;
+    inset: ${({ $size }) => $size <= 22 ? '1px' : '2px'};
     display: flex;
     align-items: center;
     justify-content: center;
@@ -74,5 +77,13 @@ export const Checkbox = styled.span<{ $selected: boolean }>`
     ${Label}:hover & {
         opacity: 1;
         transform: scale(1);
+    }
+
+    svg {
+        fill: none;
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 3;
     }
 `;

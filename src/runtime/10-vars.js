@@ -118,7 +118,9 @@ const $vars = (() => {
         value = value[part];
       }
     }
-    __recordRuntimeSecret(value);
+    if (entry.is_secret === true) {
+      __recordRuntimeSecret(value);
+    }
     return value;
   };
 })();

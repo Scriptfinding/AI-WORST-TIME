@@ -1,3 +1,4 @@
+import type { DragEvent } from 'react';
 import { Icon } from '@/Shared/UI/Icon/Icon';
 import Editor, { type OnMount } from '@monaco-editor/react';
 import DataInspector from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/DataInspector/DataInspector';
@@ -20,7 +21,7 @@ interface FullscreenEditorProps {
     onClose: () => void;
     onMount: OnMount;
     onChange: (value: string) => void;
-    onDropPath: (path: string) => void;
+    onDropPath: (path: string, event?: DragEvent<HTMLElement>) => void;
 }
 
 export default function FullscreenEditor({
@@ -89,7 +90,7 @@ export default function FullscreenEditor({
                         }}
                         onDrop={event => {
                             event.preventDefault();
-                            onDropPath(event.dataTransfer.getData('text/plain'));
+                            onDropPath(event.dataTransfer.getData('text/plain'), event);
                         }}
                     >
                         <Editor

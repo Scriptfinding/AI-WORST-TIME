@@ -3,11 +3,6 @@ export interface VisibilityMeta {
     icon: string;
 }
 
-export function formatVisibility(scope: string | undefined): string {
-    if (!scope) return '';
-    return scope.charAt(0).toUpperCase() + scope.slice(1);
-}
-
 export function getVisibilityMeta(
     scope: string | undefined,
     teamName?: string | null,

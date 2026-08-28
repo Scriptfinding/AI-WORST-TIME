@@ -32,6 +32,7 @@ class UpdateDataTableRequest extends FormRequest
                     ->ignore($dataTable instanceof DataTable ? $dataTable->id : null),
             ],
             'description' => ['nullable', 'string'],
+            'group' => ['nullable', 'string', 'max:100'],
             'visibility' => [
                 'sometimes',
                 Rule::in(app(\App\Services\FeatureFlags\FeatureFlagService::class)->allowedScopes()),

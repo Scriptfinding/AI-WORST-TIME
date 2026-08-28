@@ -9,6 +9,11 @@ export interface DataTableFilter {
     value?: string;
 }
 
+export interface DataTableSort {
+    column: string;
+    direction: 'asc' | 'desc';
+}
+
 export interface DataTableExportPayload {
     format: DataTableExportFormat;
     scope: DataTableExportScope;
@@ -28,6 +33,7 @@ export interface DataTable {
     id: Id;
     name: string;
     description: string | null;
+    group: string | null;
     visibility: DataTableScope;
     team_id: Id | null;
     team_name: string | null;
@@ -83,6 +89,7 @@ export interface DataTablesPageProps {
 export interface DataTablePayload {
     name: string;
     description?: string | null;
+    group?: string | null;
     visibility: DataTableScope;
     team_id: Id | null;
     user_id?: Id | null;

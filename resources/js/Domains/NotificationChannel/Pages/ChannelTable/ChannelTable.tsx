@@ -1,7 +1,7 @@
 import React from 'react';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
-import { Empty, TableWrapper, Table, Thead, Th } from './styled';
+import { Empty, SelectionBar, TableWrapper, Table, Thead, Th } from './styled';
 import { useAuth, useCurrentWorkspace, usePageProps } from '@/App/Hooks/usePageProps';
 import { useThemeMode } from '@/App/Hooks/useThemeMode';
 import type { NotificationChannel } from '@/Domains/NotificationChannel/types';
@@ -63,6 +63,16 @@ export default function ChannelTable({
     const { collapsedGroups, isGroupHidden, toggleGroup } = useCollapsedGroups(
         `channel-collapsed-groups:${user?.id ?? 'anonymous'}`,
     );
+    const selectableIds = channels
+        .filter(channel => isAdmin || channel.user_id === user?.id)
+        .map(channel => channel.id);
+    const allVisibleSelected = selectableIds.length > 0
+        && selectableIds.every(id => selectedIds.has(id));
+    const toggleAllVisible = () => {
+        selectableIds.forEach(id => {
+            if (selectedIds.has(id) === allVisibleSelected) onToggleSelected(id);
+        });
+    };
 
     const handleDelete = async (channel: NotificationChannel) => {
         let usages: ChannelUsage[] = [];
@@ -107,6 +117,13 @@ export default function ChannelTable({
                 teams={teams}
                 workspaceSharingEnabled={settings?.workspace_sharing_enabled ?? false}
             />
+            {selectableIds.length > 0 && (
+                <SelectionBar
+                    allSelected={allVisibleSelected}
+                    itemLabel="channels"
+                    onToggle={toggleAllVisible}
+                />
+            )}
             {channels.length === 0 ? (
                 <Empty>
                     {filters.search || filters.group !== null || filters.scope

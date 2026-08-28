@@ -1,11 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import AppLayout from '@/App/Layout/AppLayout/AppLayout';
 import { useAuth } from '@/App/Hooks/usePageProps';
 import Button from '@/Shared/UI/Button/Button';
 import BulkDeleteConfirmation from '@/Shared/UI/BulkDeleteConfirmation/BulkDeleteConfirmation';
+import AvatarSelectionToggle from '@/Shared/UI/AvatarSelectionToggle/AvatarSelectionToggle';
+import SelectAllVisible from '@/Shared/UI/TableFilters/SelectAllVisible';
 import { useConfirm } from '@/Shared/Hooks/useConfirm';
 import { Icon } from '@/Shared/UI/Icon/Icon';
 import { matchesOwnershipScope } from '@/Shared/UI/TableFilters/options';
+import { useCollapsedGroups } from '@/Shared/UI/TableFilters/useCollapsedGroups';
+import { groupHierarchicalItems } from '@/Shared/Utils/groupHierarchicalItems';
 import * as FilterToolbarS from '@/Shared/UI/TableFilters/LocalTableFilterToolbar.styled';
 import { invalidateDataTableCache } from '@/Domains/Flow/Pages/FlowEditor/utils/dataTableSuggestions';
 import { dataTableApi, DataTableApiError } from '../api';
@@ -14,6 +18,7 @@ import type {
     DataTableData,
     DataTableFilter,
     DataTablePayload,
+    DataTableSort,
     DataTablesPageProps,
 } from '../types';
 import DataGrid from './DataGrid';
@@ -45,6 +50,9 @@ export default function DataTables({
     tableData: initialTableData = null,
 }: DataTablesPageProps) {
     const { user } = useAuth();
+    const collapsedGroups = useCollapsedGroups(
+        `data-table-collapsed-groups:${user?.id ?? 'anonymous'}`,
+    );
     const isAdmin = isAdminProp ?? user?.workspace_role === 'admin';
     const { confirm, ConfirmModal } = useConfirm();
     const [dataTables, setDataTables] = useState(initialDataTables);
@@ -83,6 +91,7 @@ export default function DataTables({
             result = result.filter(table => (
                 table.name.toLowerCase().includes(query)
                 || table.description?.toLowerCase().includes(query)
+                || table.group?.toLowerCase().includes(query)
                 || table.user_name?.toLowerCase().includes(query)
                 || table.team_name?.toLowerCase().includes(query)
             ));
@@ -92,6 +101,15 @@ export default function DataTables({
             return sortAscending ? comparison : -comparison;
         });
     }, [dataTables, scope, search, sortAscending]);
+    const groupedSections = useMemo(() => groupHierarchicalItems(
+        [...filteredTables].sort((first, second) => (
+            (first.group ?? '\uffff').localeCompare(second.group ?? '\uffff')
+        )),
+        table => table.group,
+    ), [filteredTables]);
+    const groups = useMemo(() => (
+        [...new Set(dataTables.map(table => table.group).filter((group): group is string => !!group))].sort()
+    ), [dataTables]);
 
     const manageableFilteredTables = filteredTables.filter(canManage);
     const allFilteredSelected = manageableFilteredTables.length > 0
@@ -126,6 +144,7 @@ export default function DataTables({
         page = 1,
         filters: DataTableFilter[] = [],
         limit = pageLimit,
+        sort: DataTableSort | null = { column: 'id', direction: 'asc' },
     ) => {
         setActiveTableId(tableId);
         setMobilePane('data');
@@ -134,7 +153,7 @@ export default function DataTables({
         setLoadingData(true);
         setError('');
         try {
-            const data = await dataTableApi.getTable(tableId, page, filters, limit);
+            const data = await dataTableApi.getTable(tableId, page, filters, limit, sort);
             setTableData(data);
             setDataTables(current => current.map(table => (
                 table.id === data.table.id ? { ...table, ...data.table } : table
@@ -280,6 +299,10 @@ export default function DataTables({
         } : current);
     };
 
+    const syncColumns = (columns: DataTableData['columns']) => {
+        setTableData(current => current ? { ...current, columns } : current);
+    };
+
     const selectedTables = dataTables.filter(table => selectedIds.has(table.id));
 
     return (
@@ -287,10 +310,23 @@ export default function DataTables({
             title="Data Tables"
             noPadding
             headerRight={(
-                <Button size="sm" onClick={openCreate}>
-                    <Icon icon="lucide:plus" width={14} />
-                    New Data Table
-                </Button>
+                <S.HeaderActions>
+                    {selectedIds.size > 0 && (
+                        <Button
+                            size="sm"
+                            variant="danger"
+                            loading={deletingSelected}
+                            onClick={() => void removeTables(selectedTables)}
+                        >
+                            <Icon icon="lucide:trash-2" width={14} />
+                            Delete ({selectedIds.size})
+                        </Button>
+                    )}
+                    <Button size="sm" onClick={openCreate}>
+                        <Icon icon="lucide:plus" width={14} />
+                        New Data Table
+                    </Button>
+                </S.HeaderActions>
             )}
         >
             <S.Page>
@@ -308,27 +344,15 @@ export default function DataTables({
                     ))}
                 </S.MobileNav>
                 <S.Container>
-                    <S.Panel $width="330px" $mobileVisible={mobilePane === 'tables'}>
+                    <S.Panel $width="340px" $mobileVisible={mobilePane === 'tables'}>
                         <S.PanelHeader>
-                            <S.PanelTitleWrap>
-                                <Icon icon="lucide:database" width={14} />
-                                <S.PanelTitle>Data Tables</S.PanelTitle>
-                                <S.GridRowCount>({filteredTables.length})</S.GridRowCount>
-                            </S.PanelTitleWrap>
-                            {selectedIds.size > 0 && (
-                                <Button
-                                    size="sm"
-                                    variant="danger"
-                                    style={{ padding: '4px 8px' }}
-                                    loading={deletingSelected}
-                                    onClick={() => void removeTables(selectedTables)}
-                                >
-                                    <Icon icon="lucide:trash-2" width={13} />
-                                    {selectedIds.size}
-                                </Button>
-                            )}
+                            <S.PanelContextTitle>Data Tables</S.PanelContextTitle>
+                            <S.PanelContextCount>
+                                {filteredTables.length} / {dataTables.length}
+                            </S.PanelContextCount>
                         </S.PanelHeader>
                         <S.PanelFilterToolbar
+                            compact
                             search={search}
                             scope={scope}
                             teams={teams}
@@ -342,8 +366,8 @@ export default function DataTables({
                                 >
                                     <Icon
                                         icon={sortAscending
-                                            ? 'lucide:arrow-down-a-z'
-                                            : 'lucide:arrow-up-z-a'}
+                                            ? 'lucide:arrow-up-z-a'
+                                            : 'lucide:arrow-down-a-z'}
                                         width={14}
                                     />
                                 </FilterToolbarS.SortButton>
@@ -352,27 +376,51 @@ export default function DataTables({
                             onScopeChange={setScope}
                         />
                         {manageableFilteredTables.length > 0 && (
-                            <S.SearchWrap>
-                                <S.TableSelectAllCheckbox
-                                    type="checkbox"
-                                    checked={allFilteredSelected}
-                                    aria-label={allFilteredSelected
-                                        ? 'Deselect all visible data tables'
-                                        : 'Select all visible data tables'}
-                                    onChange={toggleAllFiltered}
-                                />
-                                <S.RowMeta>
-                                    {allFilteredSelected ? 'All visible selected' : 'Select all visible'}
-                                </S.RowMeta>
-                            </S.SearchWrap>
+                            <SelectAllVisible
+                                allSelected={allFilteredSelected}
+                                itemLabel="data tables"
+                                onToggle={toggleAllFiltered}
+                            />
                         )}
                         <S.List>
-                            {filteredTables.map(table => (
+                            {groupedSections.map(section => {
+                                const hideItems = section.group
+                                    ? collapsedGroups.isGroupHidden(section.group)
+                                    : false;
+                                const visibleHeaders = section.headers.filter(header => {
+                                    const parentKey = header.key.split('/').slice(0, -1).join('/');
+                                    return !parentKey || !collapsedGroups.isGroupHidden(parentKey);
+                                });
+                                if (hideItems && visibleHeaders.length === 0) return null;
+                                const itemDepth = section.group ? section.group.split('/').length : 0;
+
+                                return (
+                                    <Fragment key={section.group ?? 'ungrouped'}>
+                                        {visibleHeaders.map(header => (
+                                            <S.FolderLabel
+                                                key={header.key}
+                                                type="button"
+                                                $depth={header.depth}
+                                                onClick={() => collapsedGroups.toggleGroup(header.key)}
+                                            >
+                                                <Icon
+                                                    icon={collapsedGroups.collapsedGroups.has(header.key)
+                                                        ? 'lucide:chevron-right'
+                                                        : 'lucide:chevron-down'}
+                                                    width={11}
+                                                />
+                                                <Icon icon="lucide:folder" width={10} />
+                                                <span>{header.label}</span>
+                                                <S.GroupCount>({header.count})</S.GroupCount>
+                                            </S.FolderLabel>
+                                        ))}
+                                        {!hideItems && section.items.map(table => (
                                 <S.TableListRow
                                     key={table.id}
                                     role="button"
                                     tabIndex={0}
                                     $active={table.id === activeTableId}
+                                    $depth={itemDepth}
                                     onClick={() => void loadTable(table.id)}
                                     onKeyDown={event => {
                                         if (event.target !== event.currentTarget) return;
@@ -382,18 +430,22 @@ export default function DataTables({
                                         }
                                     }}
                                 >
-                                    {canManage(table) && (
-                                        <S.TableCheckbox
-                                            type="checkbox"
-                                            checked={selectedIds.has(table.id)}
-                                            aria-label={`${selectedIds.has(table.id) ? 'Deselect' : 'Select'} ${table.name}`}
-                                            onClick={event => event.stopPropagation()}
+                                    {canManage(table) ? (
+                                        <AvatarSelectionToggle
+                                            selected={selectedIds.has(table.id)}
                                             onChange={() => toggleSelection(table.id)}
-                                        />
+                                            label={`${selectedIds.has(table.id) ? 'Deselect' : 'Select'} ${table.name}`}
+                                            size={22}
+                                        >
+                                            <S.ScopeIcon $scope={table.visibility} title={table.visibility}>
+                                                <Icon icon={scopeIcon(table.visibility)} width={12} />
+                                            </S.ScopeIcon>
+                                        </AvatarSelectionToggle>
+                                    ) : (
+                                        <S.ScopeIcon $scope={table.visibility} title={table.visibility}>
+                                            <Icon icon={scopeIcon(table.visibility)} width={12} />
+                                        </S.ScopeIcon>
                                     )}
-                                    <S.ScopeIcon $scope={table.visibility} title={table.visibility}>
-                                        <Icon icon={scopeIcon(table.visibility)} width={12} />
-                                    </S.ScopeIcon>
                                     <S.RowContent>
                                         <S.RowName>{table.name}</S.RowName>
                                         <S.RowMeta>
@@ -410,6 +462,7 @@ export default function DataTables({
                                     {canManage(table) && (
                                         <S.RowActions>
                                             <S.BareAction
+                                                type="button"
                                                 title="Edit data table"
                                                 onClick={event => {
                                                     event.stopPropagation();
@@ -420,7 +473,9 @@ export default function DataTables({
                                             </S.BareAction>
                                             <S.BareAction
                                                 $danger
+                                                type="button"
                                                 title="Delete data table"
+                                                aria-label={`Delete ${table.name}`}
                                                 onClick={event => {
                                                     event.stopPropagation();
                                                     void removeTables([table]);
@@ -431,7 +486,10 @@ export default function DataTables({
                                         </S.RowActions>
                                     )}
                                 </S.TableListRow>
-                            ))}
+                                        ))}
+                                    </Fragment>
+                                );
+                            })}
                             {filteredTables.length === 0 && (
                                 <S.EmptyState>
                                     {dataTables.length === 0
@@ -448,10 +506,11 @@ export default function DataTables({
                             loading={loadingData}
                             canManage={canManage(activeTable)}
                             mobileVisible={mobilePane === 'data'}
-                            onLoadPage={(page, filters, limit) => (
-                                loadTable(activeTable.id, page, filters, limit)
+                            onLoadPage={(page, filters, limit, sort) => (
+                                loadTable(activeTable.id, page, filters, limit, sort)
                             )}
                             onCountsChange={syncCounts}
+                            onColumnsChange={syncColumns}
                         />
                     ) : (
                         <S.GridPanel $mobileVisible={mobilePane === 'data'}>
@@ -468,6 +527,7 @@ export default function DataTables({
             </S.Page>
             <DataTableModal
                 dataTable={editingTable}
+                groups={groups}
                 isOpen={modalOpen}
                 teams={teams}
                 submitting={modalSubmitting}

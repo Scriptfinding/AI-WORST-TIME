@@ -6,7 +6,13 @@ import EditorActions from './EditorActions/EditorActions';
 import SelectInput from './SelectInput/SelectInput';
 import type { ChannelSuggestion } from '@/Domains/Flow/Pages/FlowEditor/utils/channelSuggestions';
 import SuggestionPicker from './SuggestionPicker';
-import { CODE_INPUT_EDITOR_OPTIONS, EXPRESSION_EDITOR_OPTIONS, PLAIN_FIXED_INPUT_EDITOR_OPTIONS } from './utils';
+import {
+    CODE_INPUT_EDITOR_OPTIONS,
+    EXPRESSION_EDITOR_OPTIONS,
+    EXPRESSION_MAX_HEIGHT,
+    EXPRESSION_OVERFLOW_SCROLLBAR_OPTIONS,
+    PLAIN_FIXED_INPUT_EDITOR_OPTIONS,
+} from './utils';
 import type { WatcherSuggestion } from '@/Domains/Flow/Pages/FlowEditor/utils/mailboxWatcherSuggestions';
 import * as S from './FixedInputRenderer.styled';
 import * as Shared from './shared.styled';
@@ -106,6 +112,9 @@ export default function FixedInputRenderer({
                     defaultValue={value.value}
                     options={{
                         ...EXPRESSION_EDITOR_OPTIONS,
+                        ...(inputType === 'textarea' && codeEditorHeight >= EXPRESSION_MAX_HEIGHT
+                            ? EXPRESSION_OVERFLOW_SCROLLBAR_OPTIONS
+                            : {}),
                         placeholder,
                         readOnly,
                         domReadOnly: readOnly,

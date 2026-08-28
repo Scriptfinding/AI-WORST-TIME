@@ -11,7 +11,7 @@ import type { FlowTrigger } from '@/Domains/Flow/types';
 import type { IntegrationScope } from '@/Domains/Integration/types';
 import StructuredObjectInput from '@/Domains/Flow/Pages/FlowEditor/components/StructuredObjectInput/StructuredObjectInput';
 import type { TeamOption, TriggerFormData } from '@/Domains/Flow/Pages/FlowEditor/Panes/TriggersPane/types';
-import GroupField from '@/Domains/Flow/Pages/FlowEditor/Panes/components/GroupField/GroupField';
+import GroupField from '@/Shared/UI/GroupField/GroupField';
 import CronFields from './CronFields';
 import * as S from './styled';
 

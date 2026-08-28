@@ -27,7 +27,7 @@ export default function OnboardingSection() {
     return (
         <S.Card>
             <S.Visual aria-hidden="true">
-                <Icon icon="lucide:party-popper" width={24} height={24} />
+                <Icon icon="lucide:life-buoy" width={24} height={24} />
             </S.Visual>
             <S.Content>
                 <S.Title>Onboarding messages</S.Title>

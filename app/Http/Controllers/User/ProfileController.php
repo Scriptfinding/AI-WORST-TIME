@@ -37,6 +37,7 @@ class ProfileController extends Controller
         'channels',
         'mailboxes',
         'snippets',
+        'data-tables',
         'integrations',
         'workspace.settings',
         'workspace.members',

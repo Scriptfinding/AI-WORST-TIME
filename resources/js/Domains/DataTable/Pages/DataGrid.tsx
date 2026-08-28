@@ -14,6 +14,7 @@ import type {
     DataTableExportScope,
     DataTableFilter,
     DataTableRow,
+    DataTableSort,
 } from '../types';
 import DataTableColumnFilter from './DataTableColumnFilter';
 import DataTableColumnTypeSelect from './DataTableColumnTypeSelect';
@@ -26,12 +27,18 @@ interface Props {
     loading: boolean;
     canManage: boolean;
     mobileVisible: boolean;
-    onLoadPage: (page: number, filters: DataTableFilter[], limit: number) => Promise<void>;
+    onLoadPage: (
+        page: number,
+        filters: DataTableFilter[],
+        limit: number,
+        sort: DataTableSort | null,
+    ) => Promise<void>;
     onCountsChange: (counts: { rows_count?: number; columns_count?: number }) => void;
+    onColumnsChange: (columns: DataTableColumn[]) => void;
 }
 
 const PER_PAGE_OPTIONS = [20, 50, 100];
-const ID_COLUMN_WIDTH = 52;
+const ID_COLUMN_WIDTH = 80;
 
 type SystemColumnKey = 'id' | 'created_at' | 'updated_at';
 
@@ -39,9 +46,9 @@ const SYSTEM_COLUMN_DEFAULTS: Record<
     SystemColumnKey,
     { width: number; minWidth: number; compact: boolean }
 > = {
-    id: { width: ID_COLUMN_WIDTH, minWidth: 44, compact: true },
-    created_at: { width: 160, minWidth: 50, compact: false },
-    updated_at: { width: 160, minWidth: 50, compact: false },
+    id: { width: ID_COLUMN_WIDTH, minWidth: 68, compact: true },
+    created_at: { width: 200, minWidth: 120, compact: false },
+    updated_at: { width: 200, minWidth: 120, compact: false },
 };
 
 const valueFor = (row: DataTableRow, column: DataTableColumn): DataTableCellValue => (
@@ -57,6 +64,20 @@ const inputValue = (value: DataTableCellValue, type: DataTableColumnType) => {
         return localDate.toISOString().slice(0, 16);
     }
     return String(value);
+};
+
+const defaultColumnWidth = (column: DataTableColumn, rows: DataTableRow[]) => {
+    const longestValue = rows.reduce((longest, row) => {
+        const value = valueFor(row, column);
+        const length = value === null
+            ? 4
+            : String(value).split(/\r?\n/).reduce((max, line) => Math.max(max, line.length), 0);
+        return Math.max(longest, length);
+    }, 0);
+    const valueWidth = longestValue * 7.5 + 20;
+    const headerWidth = column.name.length * 7 + 126;
+
+    return Math.min(360, Math.max(180, valueWidth, headerWidth));
 };
 
 const parsedValue = (value: string, type: DataTableColumnType): DataTableCellValue => {
@@ -94,7 +115,7 @@ function BooleanCellEditor({
 }: {
     value: string;
     onSelect: (value: string) => void;
-    onClose: () => void;
+    onClose: (restoreFocus?: boolean) => void;
 }) {
     const [activeIndex, setActiveIndex] = useState(Math.max(
         0,
@@ -136,7 +157,7 @@ function BooleanCellEditor({
                 } else if (event.key === 'Escape') {
                     event.preventDefault();
                     event.stopPropagation();
-                    onClose();
+                    onClose(true);
                 }
             }}
         >
@@ -272,10 +293,12 @@ export default function DataGrid({
     mobileVisible,
     onLoadPage,
     onCountsChange,
+    onColumnsChange,
 }: Props) {
     const { confirm, ConfirmModal } = useConfirm();
     const [view, setView] = useState(data);
     const [filters, setFilters] = useState<DataTableFilter[]>([]);
+    const [sort, setSort] = useState<DataTableSort | null>({ column: 'id', direction: 'asc' });
     const [selectedRows, setSelectedRows] = useState<Set<Id>>(new Set());
     const [drafts, setDrafts] = useState<Record<string, string>>({});
     const [savingCells, setSavingCells] = useState<Set<string>>(new Set());
@@ -373,6 +396,90 @@ export default function DataGrid({
     ) => {
         event.preventDefault();
         event.clipboardData.setData('text/plain', value === null ? '' : String(value));
+    };
+
+    const focusAndRevealCell = (cell: HTMLElement) => {
+        cell.focus({ preventScroll: true });
+        const scroller = cell.closest<HTMLElement>('[data-grid-scroller="true"]');
+        if (!scroller) return;
+        const cellRect = cell.getBoundingClientRect();
+        const scrollerRect = scroller.getBoundingClientRect();
+        const leftEdge = scrollerRect.left + 32;
+        const topEdge = scrollerRect.top + 38;
+        let left = 0;
+        let top = 0;
+
+        if (cellRect.left < leftEdge) left = cellRect.left - leftEdge;
+        else if (cellRect.right > scrollerRect.right) left = cellRect.right - scrollerRect.right;
+        if (cellRect.top < topEdge) top = cellRect.top - topEdge;
+        else if (cellRect.bottom > scrollerRect.bottom) top = cellRect.bottom - scrollerRect.bottom;
+        if (left || top) scroller.scrollBy({ left, top });
+    };
+
+    const focusCell = (key: string) => {
+        requestAnimationFrame(() => {
+            const cells = document.querySelectorAll<HTMLElement>('[data-data-table-cell="true"]');
+            const cell = [...cells].find(candidate => candidate.dataset.cellKey === key);
+            if (cell) focusAndRevealCell(cell);
+        });
+    };
+
+    const handleCellNavigation = (
+        event: React.KeyboardEvent<HTMLTableCellElement>,
+        onEdit?: () => void,
+        onClear?: () => void,
+        onType?: (value: string) => void,
+    ) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === 'Enter' && onEdit) {
+            event.preventDefault();
+            onEdit();
+            return;
+        }
+        if ((event.key === 'Delete' || event.key === 'Backspace') && onClear) {
+            event.preventDefault();
+            onClear();
+            return;
+        }
+        if (
+            event.key.length === 1
+            && !event.metaKey
+            && !event.ctrlKey
+            && !event.altKey
+            && onType
+        ) {
+            event.preventDefault();
+            onType(event.key);
+            return;
+        }
+        if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+
+        const currentCell = event.currentTarget;
+        const currentRow = currentCell.closest('tr');
+        const body = currentRow?.parentElement;
+        if (!currentRow || !body) return;
+        const rows = [...body.querySelectorAll<HTMLTableRowElement>(':scope > tr')]
+            .filter(row => row.querySelector('[data-data-table-cell="true"]'));
+        const rowIndex = rows.indexOf(currentRow);
+        const cells = [...currentRow.querySelectorAll<HTMLTableCellElement>(
+            '[data-data-table-cell="true"]',
+        )];
+        const columnIndex = cells.indexOf(currentCell);
+        let target: HTMLTableCellElement | undefined;
+
+        if (event.key === 'ArrowLeft') target = cells[columnIndex - 1];
+        if (event.key === 'ArrowRight') target = cells[columnIndex + 1];
+        if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+            const targetRow = rows[rowIndex + (event.key === 'ArrowUp' ? -1 : 1)];
+            target = targetRow
+                ? [...targetRow.querySelectorAll<HTMLTableCellElement>(
+                    '[data-data-table-cell="true"]',
+                )][columnIndex]
+                : undefined;
+        }
+        if (!target) return;
+        event.preventDefault();
+        focusAndRevealCell(target);
     };
 
     const setRow = (updated: DataTableRow) => {
@@ -504,6 +611,17 @@ export default function DataGrid({
         );
     };
 
+    const editCell = (column: DataTableColumn, key: string) => {
+        if (!canManage || savingCells.has(key)) return;
+        if (column.type === 'boolean') {
+            setEditingBooleanCell(key);
+        } else if (column.type === 'string') {
+            setExpandedCell(key);
+        } else {
+            setEditingScalarCell(key);
+        }
+    };
+
     const scalarEditorProps = (
         row: DataTableRow,
         column: DataTableColumn,
@@ -526,10 +644,12 @@ export default function DataGrid({
             if (event.key === 'Enter' && (blurOnPlainEnter || event.metaKey || event.ctrlKey)) {
                 if (!blurOnPlainEnter) event.preventDefault();
                 event.currentTarget.blur();
+                focusCell(key);
             }
             if (event.key === 'Escape') {
                 cancelCellEdit(key, closeEditor);
                 event.currentTarget.blur();
+                focusCell(key);
             }
         },
     });
@@ -578,16 +698,47 @@ export default function DataGrid({
         />
     );
 
+    const toggleSort = (column: string) => {
+        const nextSort: DataTableSort | null = sort?.column !== column
+            ? { column, direction: 'asc' }
+            : sort.direction === 'asc'
+                ? { column, direction: 'desc' }
+                : null;
+        setSort(nextSort);
+        setSelectedRows(new Set());
+        void onLoadPage(1, filters, view.rows.per_page, nextSort);
+    };
+
+    const sortIcon = (column: string) => sort?.column === column && (
+        <Icon
+            icon={sort.direction === 'asc' ? 'lucide:arrow-up' : 'lucide:arrow-down'}
+            width={11}
+            aria-label={`Sorted ${sort.direction === 'asc' ? 'ascending' : 'descending'}`}
+        />
+    );
+
+    const handleHeaderSort = (
+        event: React.MouseEvent<HTMLTableCellElement>,
+        column: string,
+    ) => {
+        if ((event.target as Element).closest('button, input, [data-column-edit]')) return;
+        toggleSort(column);
+    };
+
     const renderSystemHeader = (colKey: SystemColumnKey) => {
         const defaults = SYSTEM_COLUMN_DEFAULTS[colKey];
         return (
             <S.GridHeader
                 $system
+                $sortable
                 $compact={defaults.compact}
                 $width={columnWidths[colKey] ?? defaults.width}
+                onClick={event => handleHeaderSort(event, colKey)}
             >
                 <S.HeaderContent>
                     <S.ColumnName>{colKey}</S.ColumnName>
+                    {sortIcon(colKey)}
+                    <S.HeaderSpacer />
                     <Icon icon="lucide:lock" width={10} aria-label="Read only" />
                 </S.HeaderContent>
                 {renderResizeHandle(colKey, colKey, defaults.width, defaults.minWidth)}
@@ -607,9 +758,11 @@ export default function DataGrid({
                 $selected={selected}
                 $focused={focusedCell === key}
                 data-data-table-cell="true"
+                data-cell-key={key}
                 tabIndex={0}
                 onFocus={() => setFocusedCell(key)}
                 onMouseDownCapture={event => event.currentTarget.focus()}
+                onKeyDown={handleCellNavigation}
                 onCopy={event => copyCell(event, value)}
             >
                 <S.SystemValue title={value}>{value}</S.SystemValue>
@@ -622,7 +775,7 @@ export default function DataGrid({
         setError('');
         try {
             await dataTableApi.addRow(view.table.id);
-            await onLoadPage(1, filters, view.rows.per_page);
+            await onLoadPage(1, filters, view.rows.per_page, sort);
             onCountsChange({ rows_count: view.table.rows_count + 1 });
         } catch (caught) {
             setError(messageFor(caught));
@@ -649,7 +802,7 @@ export default function DataGrid({
                 selectedRows.size === view.rows.data.length && view.rows.current_page > 1
             ) ? view.rows.current_page - 1 : view.rows.current_page;
             setSelectedRows(new Set());
-            await onLoadPage(targetPage, filters, view.rows.per_page);
+            await onLoadPage(targetPage, filters, view.rows.per_page, sort);
             onCountsChange({ rows_count: Math.max(0, view.table.rows_count - selectedRows.size) });
         } catch (caught) {
             setError(messageFor(caught));
@@ -669,11 +822,13 @@ export default function DataGrid({
                 columnName.trim(),
                 columnType,
             );
+            const columns = [...view.columns, column];
             setView(current => ({
                 ...current,
-                columns: [...current.columns, column],
+                columns,
                 table: { ...current.table, columns_count: current.table.columns_count + 1 },
             }));
+            onColumnsChange(columns);
             setColumnName('');
             setShowAddColumn(false);
             invalidateDataTableCache();
@@ -696,10 +851,12 @@ export default function DataGrid({
                 column.id,
                 { name },
             );
+            const columns = view.columns.map(item => item.id === column.id ? updated : item);
             setView(current => ({
                 ...current,
-                columns: current.columns.map(item => item.id === column.id ? updated : item),
+                columns,
             }));
+            onColumnsChange(columns);
             invalidateDataTableCache();
         } catch (caught) {
             setError(messageFor(caught));
@@ -720,6 +877,7 @@ export default function DataGrid({
                 reordered.map(column => column.id),
             );
             setView(current => ({ ...current, columns }));
+            onColumnsChange(columns);
         } catch (caught) {
             setView(current => ({ ...current, columns: sortedColumns }));
             setError(messageFor(caught));
@@ -740,14 +898,16 @@ export default function DataGrid({
         try {
             await dataTableApi.deleteColumn(view.table.id, column.id);
             const nextFilters = filters.filter(filter => filter.column_id !== column.id);
+            const columns = view.columns.filter(item => item.id !== column.id);
             setFilters(nextFilters);
             setView(current => ({
                 ...current,
-                columns: current.columns.filter(item => item.id !== column.id),
+                columns,
                 table: { ...current.table, columns_count: current.table.columns_count - 1 },
             }));
+            onColumnsChange(columns);
             if (nextFilters.length !== filters.length) {
-                await onLoadPage(1, nextFilters, view.rows.per_page);
+                await onLoadPage(1, nextFilters, view.rows.per_page, sort);
             }
             invalidateDataTableCache();
             onCountsChange({ columns_count: Math.max(0, view.table.columns_count - 1) });
@@ -776,13 +936,13 @@ export default function DataGrid({
             filter,
         ];
         setFilters(nextFilters);
-        void onLoadPage(1, nextFilters, view.rows.per_page);
+        void onLoadPage(1, nextFilters, view.rows.per_page, sort);
     };
 
     const clearFilter = (columnId: Id) => {
         const nextFilters = filters.filter(filter => filter.column_id !== columnId);
         setFilters(nextFilters);
-        void onLoadPage(1, nextFilters, view.rows.per_page);
+        void onLoadPage(1, nextFilters, view.rows.per_page, sort);
     };
 
     const exportTable = async (
@@ -820,7 +980,7 @@ export default function DataGrid({
         try {
             const result = await dataTableApi.importRows(view.table.id, { rows });
             setSelectedRows(new Set());
-            await onLoadPage(1, filters, view.rows.per_page);
+            await onLoadPage(1, filters, view.rows.per_page, sort);
             const rowsCount = view.table.rows_count + result.imported;
             setView(current => ({
                 ...current,
@@ -841,9 +1001,23 @@ export default function DataGrid({
                 <S.PanelTitleWrap>
                     <Icon icon="lucide:table" width={15} />
                     <S.PanelTitle>{view.table.name}</S.PanelTitle>
-                    <S.GridRowCount>({view.rows.total})</S.GridRowCount>
                 </S.PanelTitleWrap>
                 <S.ToolbarGroup>
+                    <S.RefreshButton
+                        type="button"
+                        $loading={loading}
+                        disabled={loading}
+                        title="Refresh rows"
+                        aria-label="Refresh rows"
+                        onClick={() => void onLoadPage(
+                            view.rows.current_page,
+                            filters,
+                            view.rows.per_page,
+                            sort,
+                        )}
+                    >
+                        <Icon icon="lucide:refresh-cw" width={13} height={13} />
+                    </S.RefreshButton>
                     {canManage && selectedRows.size > 0 && (
                         <Button size="sm" variant="danger" onClick={deleteSelected} loading={working}>
                             <Icon icon="lucide:trash-2" width={13} />
@@ -913,7 +1087,7 @@ export default function DataGrid({
             {loading ? (
                 <S.Loading><Icon icon="lucide:loader-circle" width={20} /></S.Loading>
             ) : (
-                <S.GridScroller>
+                <S.GridScroller data-grid-scroller="true">
                     <S.GridTable>
                         <thead>
                             <tr>
@@ -931,16 +1105,21 @@ export default function DataGrid({
                                 {sortedColumns.map((column, index) => (
                                     <S.GridHeader
                                         key={column.id}
-                                        $width={columnWidths[`column:${column.id}`] ?? 200}
+                                        $sortable
+                                        $width={columnWidths[`column:${column.id}`]
+                                            ?? defaultColumnWidth(column, view.rows.data)}
+                                        onClick={event => handleHeaderSort(event, String(column.id))}
                                     >
                                         <S.HeaderContent>
-                                            <S.ColumnType title={column.type} aria-label={column.type}>
-                                                <Icon
-                                                    icon={columnTypeIcon(column.type)}
-                                                    width={13}
-                                                    height={13}
-                                                />
-                                            </S.ColumnType>
+                                            {editingColumn !== column.id && (
+                                                <S.ColumnType title={column.type} aria-label={column.type}>
+                                                    <Icon
+                                                        icon={columnTypeIcon(column.type)}
+                                                        width={13}
+                                                        height={13}
+                                                    />
+                                                </S.ColumnType>
+                                            )}
                                             {editingColumn === column.id ? (
                                                 <S.InlineInput
                                                     autoFocus
@@ -953,11 +1132,21 @@ export default function DataGrid({
                                                     }}
                                                 />
                                             ) : (
-                                                <S.ColumnName title={column.name}>
+                                                <S.ColumnName
+                                                    title={column.name}
+                                                    data-column-edit={canManage ? 'true' : undefined}
+                                                    $editable={canManage}
+                                                    onClick={canManage ? () => {
+                                                        setEditingColumn(column.id);
+                                                        setEditingColumnName(column.name);
+                                                    } : undefined}
+                                                >
                                                     {column.name}
                                                 </S.ColumnName>
                                             )}
-                                            {canManage && <S.ColumnActions>
+                                            {editingColumn !== column.id && sortIcon(String(column.id))}
+                                            {editingColumn !== column.id && <S.HeaderSpacer />}
+                                            {canManage && editingColumn !== column.id && <S.ColumnActions>
                                                 <S.TinyAction
                                                     disabled={index === 0}
                                                     title="Move left"
@@ -987,7 +1176,11 @@ export default function DataGrid({
                                                 />
                                             </S.ColumnActions>}
                                         </S.HeaderContent>
-                                        {renderResizeHandle(`column:${column.id}`, column.name, 200)}
+                                        {renderResizeHandle(
+                                            `column:${column.id}`,
+                                            column.name,
+                                            defaultColumnWidth(column, view.rows.data),
+                                        )}
                                     </S.GridHeader>
                                 ))}
                                 {renderSystemHeader('created_at')}
@@ -1030,7 +1223,9 @@ export default function DataGrid({
                                                 <S.GridCell
                                                     key={column.id}
                                                     data-data-table-cell="true"
-                                                    $width={columnWidths[`column:${column.id}`] ?? 200}
+                                                    data-cell-key={key}
+                                                    $width={columnWidths[`column:${column.id}`]
+                                                        ?? defaultColumnWidth(column, view.rows.data)}
                                                     $selected={selected}
                                                     $focused={focusedCell === key}
                                                     tabIndex={0}
@@ -1044,12 +1239,30 @@ export default function DataGrid({
                                                     }}
                                                     onCopy={event => copyCell(event, valueFor(row, column))}
                                                     onPaste={event => pasteCell(event, row, column, key)}
+                                                    onKeyDown={event => handleCellNavigation(
+                                                        event,
+                                                        () => editCell(column, key),
+                                                        () => {
+                                                            if (!canManage || saving || valueFor(row, column) === null) return;
+                                                            void updateCellImmediately(row, column, key, null, '');
+                                                        },
+                                                        value => {
+                                                            if (!canManage || saving) return;
+                                                            if (column.type === 'string' || column.type === 'number') {
+                                                                setDraft(key, value);
+                                                            }
+                                                            editCell(column, key);
+                                                        },
+                                                    )}
                                                 >
                                                     {column.type === 'boolean' ? (
                                                         editingBooleanCell === key ? (
                                                             <BooleanCellEditor
                                                                 value={currentValue}
-                                                                onClose={() => setEditingBooleanCell(null)}
+                                                                onClose={restoreFocus => {
+                                                                    setEditingBooleanCell(null);
+                                                                    if (restoreFocus) focusCell(key);
+                                                                }}
                                                                 onSelect={value => {
                                                                     setEditingBooleanCell(null);
                                                                     void updateCellImmediately(
@@ -1059,15 +1272,14 @@ export default function DataGrid({
                                                                         parsedValue(value, column.type),
                                                                         value,
                                                                     );
+                                                                    focusCell(key);
                                                                 }}
                                                             />
                                                         ) : (
                                                             <S.BooleanCellWrap
                                                                 $disabled={!canManage || saving}
                                                                 title="Double-click to edit"
-                                                                onDoubleClick={() => {
-                                                                    if (canManage && !saving) setEditingBooleanCell(key);
-                                                                }}
+                                                                onDoubleClick={() => editCell(column, key)}
                                                             >
                                                                 <S.BooleanLabel>
                                                                     {currentValue === '' ? 'NULL' : currentValue.toUpperCase()}
@@ -1084,6 +1296,7 @@ export default function DataGrid({
                                                                     key,
                                                                     () => setEditingScalarCell(null),
                                                                 )}
+                                                                onFocus={event => event.currentTarget.showPicker()}
                                                             />
                                                             <S.DateTimeActions>
                                                                 {currentValue !== '' && canManage && (
@@ -1139,14 +1352,7 @@ export default function DataGrid({
                                                         <S.CellDisplay
                                                             $disabled={!canManage || saving}
                                                             title={canManage ? 'Double-click to edit' : undefined}
-                                                            onDoubleClick={() => {
-                                                                if (!canManage || saving) return;
-                                                                if (column.type === 'string') {
-                                                                    setExpandedCell(key);
-                                                                } else {
-                                                                    setEditingScalarCell(key);
-                                                                }
-                                                            }}
+                                                            onDoubleClick={() => editCell(column, key)}
                                                         >
                                                             <S.CellDisplayValue $null={currentValue === ''}>
                                                                 {currentValue === ''
@@ -1206,6 +1412,7 @@ export default function DataGrid({
                             view.rows.current_page - 1,
                             filters,
                             view.rows.per_page,
+                            sort,
                         )}
                     >
                         <Icon icon="lucide:chevron-left" width={14} />
@@ -1218,6 +1425,7 @@ export default function DataGrid({
                             view.rows.current_page + 1,
                             filters,
                             view.rows.per_page,
+                            sort,
                         )}
                     >
                         <Icon icon="lucide:chevron-right" width={14} />
@@ -1231,6 +1439,7 @@ export default function DataGrid({
                                 1,
                                 filters,
                                 Number(event.target.value),
+                                sort,
                             )}
                         >
                             {PER_PAGE_OPTIONS.map(option => (

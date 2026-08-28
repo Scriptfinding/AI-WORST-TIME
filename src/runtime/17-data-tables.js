@@ -195,9 +195,9 @@ const $dataTableDeleteRows = async function(tableId, filters, options = {}) {
 
 /* @help Data Tables
  * @sig $dataTableCreate(name, columns?, options?)
- * @desc Create a physical data table with automatic id, created_at, and updated_at columns.
- * @nodal-desc Create a Data Table.
- * @nodal-output object
+ * @desc Create a physical data table with automatic id, created_at, and updated_at columns, and return the new table id.
+ * @nodal-desc Create a Data Table and return its id.
+ * @nodal-output string
  * @availability both
  * @nodal-param name [string, required]: Unique Data Table name inside the workspace.
  * @nodal-param columns [data-table-columns]: Custom string, number, boolean, or datetime columns.
@@ -209,7 +209,7 @@ const $dataTableDeleteRows = async function(tableId, filters, options = {}) {
  */
 const $dataTableCreate = async function(name, columns = [], options = {}) {
   const opts = __dataTableOptions(options);
-  return await __dataTableCall('dataTableSchema', {
+  const table = await __dataTableCall('dataTableSchema', {
     operation: 'create',
     name,
     columns,
@@ -218,6 +218,9 @@ const $dataTableCreate = async function(name, columns = [], options = {}) {
     ownerId: opts.ownerId,
     teamId: opts.teamId,
   });
+  // Return the id so the result plugs directly into downstream tableId
+  // parameters via expressions.
+  return table.id;
 };
 
 /* @help Data Tables

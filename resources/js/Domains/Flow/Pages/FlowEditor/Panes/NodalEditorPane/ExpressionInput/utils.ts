@@ -28,10 +28,12 @@ export const EXPRESSION_EDITOR_OPTIONS = {
     overviewRulerLanes: 0,
     hideCursorInOverviewRuler: true,
     overviewRulerBorder: false,
+    stickyScroll: { enabled: false },
     scrollbar: {
         vertical: 'hidden' as const,
         horizontal: 'hidden' as const,
         handleMouseWheel: false,
+        useShadows: false,
     },
     fixedOverflowWidgets: true,
     contextmenu: false,
@@ -52,6 +54,7 @@ export const EXPRESSION_FULLSCREEN_EDITOR_OPTIONS = {
         vertical: 'auto' as const,
         horizontal: 'auto' as const,
         handleMouseWheel: true,
+        useShadows: false,
     },
 };
 
@@ -69,6 +72,22 @@ export const CODE_INPUT_EDITOR_OPTIONS = {
         vertical: 'auto' as const,
         horizontal: 'auto' as const,
         handleMouseWheel: true,
+        useShadows: false,
+    },
+};
+
+// Applied when content exceeds the inline editor's max height, so the
+// clipped content stays reachable with the mouse wheel and a scrollbar.
+// Slim scrollbar: the default chunky one is reserved for real code editors.
+export const EXPRESSION_OVERFLOW_SCROLLBAR_OPTIONS = {
+    scrollbar: {
+        vertical: 'auto' as const,
+        horizontal: 'hidden' as const,
+        handleMouseWheel: true,
+        alwaysConsumeMouseWheel: false,
+        useShadows: false,
+        verticalScrollbarSize: 6,
+        verticalSliderSize: 6,
     },
 };
 

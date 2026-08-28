@@ -1,4 +1,5 @@
 import { useCollapsedGroups } from '@/Shared/UI/TableFilters/useCollapsedGroups';
+import SelectAllVisible from '@/Shared/UI/TableFilters/SelectAllVisible';
 import { useAuth, usePageProps } from '@/App/Hooks/usePageProps';
 import type { MailboxItem } from '@/Domains/Mailbox/types';
 import { EmptyPanel, Panel, PanelBody } from '@/Domains/Mailbox/Pages/shared.styled';
@@ -42,6 +43,16 @@ export default function MailboxListPanel({
         teams,
         workspaceSharingEnabled: settings?.workspace_sharing_enabled ?? false,
     });
+    const selectableIds = filters.filteredMailboxes
+        .filter(mailbox => isAdmin || mailbox.user_id === user?.id)
+        .map(mailbox => mailbox.id);
+    const allVisibleSelected = selectableIds.length > 0
+        && selectableIds.every(id => selectedIds.has(id));
+    const toggleAllVisible = () => {
+        selectableIds.forEach(id => {
+            if (selectedIds.has(id) === allVisibleSelected) onToggleSelected(id);
+        });
+    };
 
     return (
         <Panel $width="340px">
@@ -67,6 +78,13 @@ export default function MailboxListPanel({
                 onSearchChange={filters.setSearch}
                 onSortChange={filters.setSortAscending}
             />
+            {selectableIds.length > 0 && (
+                <SelectAllVisible
+                    allSelected={allVisibleSelected}
+                    itemLabel="mailboxes"
+                    onToggle={toggleAllVisible}
+                />
+            )}
 
             <PanelBody>
                 {filters.filteredMailboxes.length === 0 ? (

@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $team_id
  * @property string $name
  * @property string|null $description
+ * @property string|null $group
  * @property string $visibility
  * @property string $physical_name
  * @property-read User|null $user
@@ -32,6 +33,7 @@ class DataTable extends Model
         'team_id',
         'name',
         'description',
+        'group',
         'visibility',
         'physical_name',
     ];

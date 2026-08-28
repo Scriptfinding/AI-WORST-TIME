@@ -81,10 +81,24 @@ export default function AiModels({ aiModels, groups, aiIntegrations, teams, filt
     const { collapsedGroups, isGroupHidden, toggleGroup } = useCollapsedGroups(
         `ai-model-collapsed-groups:${user?.id ?? 'anonymous'}`,
     );
+    const canManage = (model: AiModel) => isAdmin || model.user_id === user?.id;
     const sections = useMemo(
         () => groupHierarchicalItems(aiModels, model => model.group),
         [aiModels],
     );
+    const selectableIds = aiModels.filter(canManage).map(model => model.id);
+    const allVisibleSelected = selectableIds.length > 0
+        && selectableIds.every(id => selectedIds.has(id));
+    const toggleAllVisible = () => {
+        setSelectedIds(current => {
+            const next = new Set(current);
+            selectableIds.forEach(id => {
+                if (allVisibleSelected) next.delete(id);
+                else next.add(id);
+            });
+            return next;
+        });
+    };
 
     useEffect(() => {
         const available = new Set(aiModels.map(model => model.id));
@@ -118,7 +132,6 @@ export default function AiModels({ aiModels, groups, aiIntegrations, teams, filt
         };
     }, [inspectModel]);
 
-    const canManage = (model: AiModel) => isAdmin || model.user_id === user?.id;
     const toggleSelected = (id: Id) => {
         setSelectedIds(current => {
             const next = new Set(current);
@@ -409,6 +422,13 @@ export default function AiModels({ aiModels, groups, aiIntegrations, teams, filt
                         <S.ResetBanner type="button" onClick={tableFilters.resetFilters}>
                             <Icon icon="lucide:filter-x" width={14} /> Filtered results, click to reset
                         </S.ResetBanner>
+                    )}
+                    {selectableIds.length > 0 && (
+                        <S.SelectionBar
+                            allSelected={allVisibleSelected}
+                            itemLabel="AI models"
+                            onToggle={toggleAllVisible}
+                        />
                     )}
 
                     {aiModels.length === 0 ? (

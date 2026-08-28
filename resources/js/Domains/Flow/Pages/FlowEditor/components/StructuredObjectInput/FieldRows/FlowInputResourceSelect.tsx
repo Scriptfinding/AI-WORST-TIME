@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { IntegrationProvider } from '@/Domains/Integration/types';
 import { getProviderConfig } from '@/Domains/Integration/Pages/providerConfig';
-import { formatVisibility, getVisibilityMeta } from '@/Shared/Utils/visibility';
+import { getVisibilityMeta } from '@/Shared/Utils/visibility';
 import { DATA_TYPE_ICONS } from '@/Shared/Utils/dataTypeIcons';
 import {
     fetchAiModelSuggestions,
@@ -63,7 +63,7 @@ export default function FlowInputResourceSelect({
         return {
             value: String(table.id),
             label: table.name,
-            detail: `${visibility?.label ?? (formatVisibility(table.visibility) || 'Private')} - ${columnLabel}`,
+            detail: visibility ? `${visibility.label} - ${columnLabel}` : columnLabel,
             detailIcon: visibility?.icon,
             icon: DATA_TYPE_ICONS.datatable,
         };

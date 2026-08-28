@@ -1,26 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
-import { Icon } from '@/Shared/UI/Icon/Icon';
 import { useSearchablePopover } from '@/Shared/Hooks/useSearchablePopover';
+import { Icon } from '@/Shared/UI/Icon/Icon';
 import * as S from './styled';
 
-interface GroupFieldProps {
+interface Props {
     value: string;
     groups: string[];
     isModalOpen: boolean;
     onChange: (group: string) => void;
 }
 
-export default function GroupField({ value, groups, isModalOpen, onChange }: GroupFieldProps) {
-    const [isOpen, setIsOpen] = useState(false);
+export default function GroupField({ value, groups, isModalOpen, onChange }: Props) {
+    const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
     const wrapperRef = useRef<HTMLDivElement>(null);
     const searchRef = useRef<HTMLInputElement>(null);
-    const filteredGroups = groups.filter(group => !search || group.toLowerCase().includes(search.toLowerCase()));
-    const hasExactMatch = groups.some(group => group.toLowerCase() === search.trim().toLowerCase());
+    const filteredGroups = groups.filter(group => (
+        !search || group.toLowerCase().includes(search.toLowerCase())
+    ));
+    const hasExactMatch = groups.some(group => (
+        group.toLowerCase() === search.trim().toLowerCase()
+    ));
 
     useSearchablePopover({
-        open: isOpen,
-        onDismiss: () => setIsOpen(false),
+        open,
+        onDismiss: () => setOpen(false),
         reset: () => setSearch(''),
         focusRef: searchRef,
         containerRefs: [wrapperRef],
@@ -28,83 +32,85 @@ export default function GroupField({ value, groups, isModalOpen, onChange }: Gro
     });
 
     useEffect(() => {
-        if (!isModalOpen) {
-            setIsOpen(false);
-            setSearch('');
-        }
+        if (isModalOpen) return;
+        setOpen(false);
+        setSearch('');
     }, [isModalOpen]);
 
     const selectGroup = (group: string) => {
         onChange(group);
-        setIsOpen(false);
+        setOpen(false);
         setSearch('');
     };
 
     return (
-        <S.GroupComboWrapper ref={wrapperRef}>
-            <S.GroupComboLabel>Group (Optional)</S.GroupComboLabel>
-            <S.GroupComboTrigger
+        <S.Wrapper ref={wrapperRef}>
+            <S.Label>Group (Optional)</S.Label>
+            <S.Trigger
                 type="button"
-                $open={isOpen}
+                $open={open}
                 $hasValue={!!value}
                 onClick={() => {
-                    setIsOpen(current => !current);
+                    setOpen(current => !current);
                     setSearch('');
                 }}
             >
                 <Icon icon="lucide:folder" width={14} />
                 {value || 'Group name'}
                 {value ? (
-                    <S.GroupComboClear
+                    <S.Clear
                         onClick={event => {
                             event.stopPropagation();
                             onChange('');
-                            setIsOpen(false);
+                            setOpen(false);
                         }}
                     >
                         <Icon icon="lucide:x" width={14} />
-                    </S.GroupComboClear>
+                    </S.Clear>
                 ) : (
                     <Icon icon="lucide:chevron-down" width={14} />
                 )}
-            </S.GroupComboTrigger>
-            {isOpen && (
-                <S.GroupComboPanel>
-                    <S.GroupComboSearch
-                        ref={searchRef}
-                        value={search}
-                        onChange={event => setSearch(event.target.value)}
-                        placeholder="Search or create group..."
-                        onKeyDown={event => {
-                            if (event.key === 'Enter' && search.trim()) {
+            </S.Trigger>
+            {open && (
+                <S.Panel>
+                    <S.SearchWrapper>
+                        <S.SearchInput
+                            ref={searchRef}
+                            value={search}
+                            onChange={event => setSearch(event.target.value)}
+                            placeholder="Search or create group..."
+                            maxLength={100}
+                            onKeyDown={event => {
+                                if (event.key !== 'Enter' || !search.trim()) return;
                                 event.preventDefault();
                                 selectGroup(search.trim());
-                            }
-                        }}
-                    />
-                    <S.GroupComboList>
+                            }}
+                        />
+                    </S.SearchWrapper>
+                    <S.List>
                         {filteredGroups.map(group => (
-                            <S.GroupComboItem
+                            <S.Item
                                 key={group}
+                                type="button"
                                 $active={value === group}
                                 onClick={() => selectGroup(group)}
                             >
                                 <Icon icon="lucide:folder" width={14} />
                                 {group}
-                            </S.GroupComboItem>
+                            </S.Item>
                         ))}
                         {search.trim() && !hasExactMatch && (
-                            <S.GroupComboCreate type="button" onClick={() => selectGroup(search.trim())}>
+                            <S.Create type="button" onClick={() => selectGroup(search.trim())}>
                                 <Icon icon="lucide:plus" width={14} />
                                 Create "{search.trim()}"
-                            </S.GroupComboCreate>
+                            </S.Create>
                         )}
                         {!search && groups.length === 0 && (
-                            <S.GroupComboEmpty>Type to create a group</S.GroupComboEmpty>
+                            <S.Empty>Type to create a group</S.Empty>
                         )}
-                    </S.GroupComboList>
-                </S.GroupComboPanel>
+                    </S.List>
+                </S.Panel>
             )}
-        </S.GroupComboWrapper>
+        </S.Wrapper>
     );
 }

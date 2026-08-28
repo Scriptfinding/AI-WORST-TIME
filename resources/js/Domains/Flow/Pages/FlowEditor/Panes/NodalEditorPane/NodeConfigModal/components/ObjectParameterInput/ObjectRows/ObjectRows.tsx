@@ -15,6 +15,7 @@ import {
     getEffectiveObjectFieldMeta,
     isFunctionMap,
 } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/NodeConfigModal/utils/objectParameters';
+import ExpressionInput from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/ExpressionInput/ExpressionInput';
 import NestedValueEditor, {
     type RenderNestedObject,
 } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/NodeConfigModal/components/ObjectParameterInput/NestedValueEditor/NestedValueEditor';
@@ -33,7 +34,7 @@ interface ObjectRowsProps {
     readOnly?: boolean;
     onUpdateField: (
         fieldId: string,
-        patch: Partial<Pick<ObjectNodeParameterField, 'key' | 'valueType' | 'value'>>,
+        patch: Partial<Pick<ObjectNodeParameterField, 'key' | 'keyMode' | 'valueType' | 'value'>>,
     ) => void;
     onRemoveField: (fieldId: string) => void;
     renderNestedObject: RenderNestedObject;
@@ -77,13 +78,38 @@ export default function ObjectRows({
                 const validationIssue = validationIssues.find(issue => issue.path === `${path}.${field.key}`);
                 const customKeyInput = customField ? (
                     <S.CustomFieldHeader>
-                        <S.FieldKeyInput
-                            data-object-key-input={field.id}
-                            value={field.key}
-                            placeholder={functionMap ? 'Function name' : 'Variable name'}
-                            disabled={readOnly}
-                            onChange={event => onUpdateField(field.id, { key: event.target.value })}
-                        />
+                        {functionMap ? (
+                            <S.FieldKeyInput
+                                data-object-key-input={field.id}
+                                value={field.key}
+                                placeholder="Function name"
+                                disabled={readOnly}
+                                onChange={event => onUpdateField(field.id, { key: event.target.value })}
+                            />
+                        ) : (
+                            <S.KeyExpressionField data-object-key-input={field.id}>
+                                <ExpressionInput
+                                    label="Name"
+                                    hint={null}
+                                    inlineLabel
+                                    inputType="text"
+                                    placeholder="Variable name"
+                                    value={{
+                                        mode: field.keyMode
+                                            ?? (field.key.includes('{{') ? 'expression' : 'fixed'),
+                                        value: field.key,
+                                    }}
+                                    outputData={outputData}
+                                    autocompleteContext={autocompleteContext}
+                                    flowId={flowId}
+                                    readOnly={readOnly}
+                                    onChange={next => onUpdateField(field.id, {
+                                        key: next.value,
+                                        keyMode: next.mode,
+                                    })}
+                                />
+                            </S.KeyExpressionField>
+                        )}
                         {!functionMap && (
                             <CustomSelect
                                 value={valueType}

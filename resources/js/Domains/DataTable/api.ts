@@ -10,6 +10,7 @@ import type {
     DataTableImportResponse,
     DataTablePayload,
     DataTableRow,
+    DataTableSort,
 } from './types';
 
 export class DataTableApiError extends Error {
@@ -66,6 +67,7 @@ export const dataTableApi = {
         page = 1,
         filters: DataTableFilter[] = [],
         limit = 50,
+        sort: DataTableSort | null = { column: 'id', direction: 'asc' },
     ) => {
         const query = new URLSearchParams({
             page: String(page),
@@ -76,6 +78,12 @@ export const dataTableApi = {
             query.set(`filters[${index}][operator]`, filter.operator);
             if (filter.value !== undefined) query.set(`filters[${index}][value]`, filter.value);
         });
+        if (sort) {
+            query.set('sort_column', sort.column);
+            query.set('sort_direction', sort.direction);
+        } else {
+            query.set('sort_column', '');
+        }
         return request<Omit<DataTableData, 'table'> & { data_table: DataTable }>(
             `/data-tables/${tableId}?${query}`,
         ).then(({ data_table: table, ...data }) => ({ ...data, table }));

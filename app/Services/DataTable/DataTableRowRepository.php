@@ -22,14 +22,24 @@ final class DataTableRowRepository
      * @param  list<array{column_id: string, operator: string, value?: string|null}>  $filters
      * @return LengthAwarePaginator<int|string, array<string, mixed>>
      */
-    public function paginate(DataTable $table, int $perPage, array $filters = []): LengthAwarePaginator
-    {
+    public function paginate(
+        DataTable $table,
+        int $perPage,
+        array $filters = [],
+        ?string $sortColumn = 'id',
+        string $sortDirection = 'asc',
+    ): LengthAwarePaginator {
         $query = DB::table($table->physical_name);
         $this->applyFilters($query, $table, $filters);
-        $paginator = $query
-            ->orderByDesc('created_at')
-            ->orderBy('id')
-            ->paginate($perPage);
+        if ($sortColumn !== null) {
+            $physicalColumn = in_array($sortColumn, ['id', 'created_at', 'updated_at'], true)
+                ? $sortColumn
+                : $table->columns()->whereKey($sortColumn)->value('name');
+            if (is_string($physicalColumn)) {
+                $query->orderBy($physicalColumn, $sortDirection);
+            }
+        }
+        $paginator = $query->paginate($perPage);
 
         $paginator->through(function (mixed $row) use ($table): array {
             /** @var array<string, mixed> $values */

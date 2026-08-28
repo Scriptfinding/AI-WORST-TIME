@@ -1,11 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '@/Shared/UI/Icon/Icon';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
-import Button from '@/Shared/UI/Button/Button';
-import Modal from '@/Shared/UI/Modal/Modal';
 import type { Id } from '@/Shared/types';
-import { findPageOnboarding, ONBOARDING_RESET_EVENT } from './pageOnboarding';
+import {
+    findPageOnboarding,
+    ONBOARDING_RESET_EVENT,
+    type PageOnboardingDefinition,
+} from './pageOnboarding';
 import * as S from './styled';
 
 const ONBOARDING_DISABLED_KEY = 'onboarding.disabled';
@@ -29,6 +31,15 @@ interface PageOnboardingProps {
     children: React.ReactNode;
 }
 
+interface PageOnboardingContextValue {
+    definition?: PageOnboardingDefinition;
+    isVisible: boolean;
+    complete: () => void;
+    disableAll: () => void;
+}
+
+const PageOnboardingContext = createContext<PageOnboardingContextValue | null>(null);
+
 function pageUser(page: OnboardingPage): OnboardingUser | null {
     return page.props.auth?.user ?? null;
 }
@@ -46,7 +57,7 @@ function mergeVersions(
     return merged;
 }
 
-export default function PageOnboardingModal({ initialPage, children }: PageOnboardingProps) {
+export default function PageOnboardingProvider({ initialPage, children }: PageOnboardingProps) {
     const page = initialPage as OnboardingPage;
     const initialUser = pageUser(page);
     const userId = useRef<Id | null>(initialUser?.id ?? null);
@@ -56,7 +67,7 @@ export default function PageOnboardingModal({ initialPage, children }: PageOnboa
     );
     const definition = useMemo(() => findPageOnboarding(url), [url]);
     const onboardingDisabled = (versions[ONBOARDING_DISABLED_KEY] ?? 0) >= 1;
-    const isOpen = Boolean(
+    const isVisible = Boolean(
         definition
         && !onboardingDisabled
         && (versions[definition.key] ?? 0) < definition.version,
@@ -118,71 +129,81 @@ export default function PageOnboardingModal({ initialPage, children }: PageOnboa
             .catch(() => undefined);
     };
 
+    const value = {
+        definition,
+        isVisible,
+        complete,
+        disableAll,
+    };
+
     return (
-        <>
+        <PageOnboardingContext.Provider value={value}>
             {children}
-            {definition && (
-                <Modal
-                    isOpen={isOpen}
-                    onClose={complete}
-                    title={definition.title}
-                    caption="A quick tour of this space"
-                    width={definition.layout === 'split' || definition.layout === 'poster' ? '760px' : '640px'}
-                    footer={(
-                        <S.Footer>
-                            <S.DisableButton type="button" onClick={disableAll}>
-                                Don't show these messages
-                            </S.DisableButton>
-                            <Button onClick={complete}>Let's go</Button>
-                        </S.Footer>
-                    )}
-                >
-                    <S.Experience $layout={definition.layout} $accent={definition.accent}>
-                        <S.Media $layout={definition.layout} aria-hidden="true">
-                            {Array.from({ length: 8 }, (_, index) => (
-                                <S.Confetti key={index} $index={index} />
+        </PageOnboardingContext.Provider>
+    );
+}
+
+interface PageOnboardingJumboProps {
+    inset?: boolean;
+}
+
+export function PageOnboardingJumbo({ inset = false }: PageOnboardingJumboProps) {
+    const onboarding = useContext(PageOnboardingContext);
+    const definition = onboarding?.definition;
+
+    if (!onboarding?.isVisible || !definition) return null;
+
+    const titleId = `onboarding-${definition.key.replaceAll('.', '-')}-title`;
+
+    return (
+        <S.Jumbo $accent={definition.accent} $inset={inset} aria-labelledby={titleId}>
+            <S.CloseButton type="button" onClick={onboarding.complete} aria-label="Close introduction">
+                <Icon icon="lucide:x" width={18} height={18} />
+            </S.CloseButton>
+            <S.Experience $layout={definition.layout} $accent={definition.accent}>
+                <S.Media $layout={definition.layout} aria-hidden="true">
+                    {Array.from({ length: 8 }, (_, index) => (
+                        <S.Confetti key={index} $index={index} />
+                    ))}
+                    <S.Satellite $position="top">
+                        <Icon icon={definition.mediaIcons[0]} width={18} height={18} />
+                    </S.Satellite>
+                    <S.MainIcon>
+                        <Icon icon={definition.icon} width={40} height={40} />
+                    </S.MainIcon>
+                    {definition.brandIcons && (
+                        <S.BrandIcons>
+                            {definition.brandIcons.map(brandIcon => (
+                                <S.BrandIcon key={brandIcon}>
+                                    <Icon icon={brandIcon} width={21} height={21} />
+                                </S.BrandIcon>
                             ))}
-                            <S.Satellite $position="top">
-                                <Icon icon={definition.mediaIcons[0]} width={18} height={18} />
-                            </S.Satellite>
-                            <S.MainIcon>
-                                <Icon icon={definition.icon} width={40} height={40} />
-                            </S.MainIcon>
-                            {definition.brandIcons && (
-                                <S.BrandIcons>
-                                    {definition.brandIcons.map(brandIcon => (
-                                        <S.BrandIcon key={brandIcon}>
-                                            <Icon icon={brandIcon} width={21} height={21} />
-                                        </S.BrandIcon>
-                                    ))}
-                                </S.BrandIcons>
-                            )}
-                            <S.Satellite $position="bottom">
-                                <Icon icon={definition.mediaIcons[1]} width={18} height={18} />
-                            </S.Satellite>
-                        </S.Media>
-                        <S.Copy>
-                            <S.MarketingLine>{definition.marketingLine}</S.MarketingLine>
-                            <S.Intro>{definition.description}</S.Intro>
-                            <S.Highlights $layout={definition.layout}>
-                                {definition.highlights.map((highlight, index) => (
-                                    <S.Highlight key={highlight} $layout={definition.layout}>
-                                        {definition.layout === 'timeline' ? (
-                                            <span>{index + 1}</span>
-                                        ) : (
-                                            <Icon icon="lucide:circle-check" width={16} height={16} />
-                                        )}
-                                        <span>{highlight}</span>
-                                    </S.Highlight>
-                                ))}
-                            </S.Highlights>
-                            <S.NextStep>
-                                <strong>Start here:</strong> {definition.nextStep}
-                            </S.NextStep>
-                        </S.Copy>
-                    </S.Experience>
-                </Modal>
-            )}
-        </>
+                        </S.BrandIcons>
+                    )}
+                    <S.Satellite $position="bottom">
+                        <Icon icon={definition.mediaIcons[1]} width={18} height={18} />
+                    </S.Satellite>
+                </S.Media>
+                <S.Copy>
+                    <S.Title id={titleId}>{definition.title}</S.Title>
+                    <S.MarketingLine>{definition.marketingLine}</S.MarketingLine>
+                    <S.Intro>{definition.description}</S.Intro>
+                    <S.Highlights>
+                        {definition.highlights.map(highlight => (
+                            <S.Highlight key={highlight}>
+                                <Icon icon="lucide:circle-check" width={16} height={16} />
+                                <span>{highlight}</span>
+                            </S.Highlight>
+                        ))}
+                    </S.Highlights>
+                    <S.NextStep>
+                        <span><strong>Start here:</strong> {definition.nextStep}</span>
+                    </S.NextStep>
+                </S.Copy>
+            </S.Experience>
+            <S.DisableButton type="button" onClick={onboarding.disableAll}>
+                Skip all instructions
+            </S.DisableButton>
+        </S.Jumbo>
     );
 }

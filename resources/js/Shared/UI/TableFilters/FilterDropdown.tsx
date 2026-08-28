@@ -13,8 +13,10 @@ interface FilterDropdownSection {
 
 interface FilterDropdownProps {
     emptyLabel: string;
+    iconOnly?: boolean;
     onSelect: (value: string) => void;
     options: TableFilterOption[];
+    panelAlign?: 'left' | 'right';
     searchPlaceholder: string;
     selectedValue: string;
     triggerIcon: string;
@@ -25,8 +27,10 @@ interface FilterDropdownProps {
 
 export default function FilterDropdown({
     emptyLabel,
+    iconOnly = false,
     onSelect,
     options,
+    panelAlign = 'right',
     panelShadow,
     searchPlaceholder,
     sections = [],
@@ -51,14 +55,17 @@ export default function FilterDropdown({
             <S.DropdownTrigger
                 type="button"
                 $open={dropdown.open}
+                $iconOnly={iconOnly}
+                aria-label={iconOnly ? triggerLabel : undefined}
+                title={iconOnly ? triggerLabel : undefined}
                 onClick={() => dropdown.setOpen(open => !open)}
             >
                 <Icon icon={triggerIcon} width={14} />
-                {triggerLabel}
-                <Icon icon="lucide:chevron-down" width={14} />
+                {!iconOnly && triggerLabel}
+                {!iconOnly && <Icon icon="lucide:chevron-down" width={14} />}
             </S.DropdownTrigger>
             {dropdown.open && (
-                <S.DropdownPanel $shadow={panelShadow}>
+                <S.DropdownPanel $shadow={panelShadow} $align={panelAlign}>
                     <S.DropdownSearchWrapper>
                         <S.DropdownSearchInput
                             ref={dropdown.searchInputRef}

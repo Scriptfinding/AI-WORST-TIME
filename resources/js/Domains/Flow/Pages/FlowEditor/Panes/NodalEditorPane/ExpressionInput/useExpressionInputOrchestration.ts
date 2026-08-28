@@ -3,12 +3,14 @@ import {
     useMemo,
     useState,
     type DragEvent,
+    type MutableRefObject,
 } from 'react';
+import type { editor } from 'monaco-editor';
 import { fetchChannelSuggestions, type ChannelSuggestion } from '@/Domains/Flow/Pages/FlowEditor/utils/channelSuggestions';
 import { fetchMailboxWatcherSuggestions, type WatcherSuggestion } from '@/Domains/Flow/Pages/FlowEditor/utils/mailboxWatcherSuggestions';
 import { fetchVariableSuggestions, type VariableSuggestion } from '@/Domains/Flow/Pages/FlowEditor/utils/variableSuggestions';
 import type { ScalarNodeParameterValue } from '../types';
-import { evaluateExpressionPreview } from '../utils/expression';
+import { evaluateExpressionPreview, expressionForPath } from '../utils/expression';
 import type { NodalAutocompleteContext } from '../utils/staticAnalysis';
 import type { ExpressionInputType } from './FixedInputRenderer';
 import { hasOpenEditorAutocomplete, insertPathExpression } from './utils';
@@ -23,6 +25,8 @@ interface UseExpressionInputOrchestrationOptions {
     inputType: ExpressionInputType;
     outputData: unknown;
     value: ScalarNodeParameterValue;
+    inlineEditorRef: MutableRefObject<editor.IStandaloneCodeEditor | null>;
+    fullscreenEditorRef: MutableRefObject<editor.IStandaloneCodeEditor | null>;
     refreshInlineExpressionCompletions: () => void;
     updateExpression: (value: string) => void;
 }
@@ -79,6 +83,8 @@ export function useExpressionInputOrchestration({
     inputType,
     outputData,
     value,
+    inlineEditorRef,
+    fullscreenEditorRef,
     refreshInlineExpressionCompletions,
     updateExpression,
 }: UseExpressionInputOrchestrationOptions) {
@@ -153,8 +159,35 @@ export function useExpressionInputOrchestration({
         return () => window.removeEventListener('keydown', handleEscape, true);
     }, [expanded]);
 
-    const insertDraggedPath = (path: string) => {
+    const insertDraggedPath = (path: string, event?: DragEvent<HTMLElement>) => {
         if (!path) return;
+
+        // Insert at the drop point (or caret) when a Monaco editor hosts the
+        // value, preserving the existing content and mode.
+        const targetEditor = expanded ? fullscreenEditorRef.current : inlineEditorRef.current;
+        if (targetEditor?.getDomNode()?.isConnected) {
+            const dropTarget = event
+                ? targetEditor.getTargetAtClientPoint(event.clientX, event.clientY)
+                : null;
+            const model = targetEditor.getModel();
+            const position = dropTarget?.position
+                ?? targetEditor.getPosition()
+                ?? model?.getFullModelRange().getEndPosition();
+            if (model && position) {
+                targetEditor.executeEdits('drop-path', [{
+                    range: {
+                        startLineNumber: position.lineNumber,
+                        startColumn: position.column,
+                        endLineNumber: position.lineNumber,
+                        endColumn: position.column,
+                    },
+                    text: expressionForPath(path),
+                }]);
+                targetEditor.focus();
+                return;
+            }
+        }
+
         updateExpression(insertPathExpression(value.mode === 'expression' ? value.value : '', path));
     };
 
@@ -167,11 +200,15 @@ export function useExpressionInputOrchestration({
         onClose: () => setExpanded(false),
         onDragOver: (event: DragEvent<HTMLElement>) => {
             event.preventDefault();
+            // Fields can nest (e.g. an object field name editor inside the
+            // value field header); the innermost field owns the drag.
+            event.stopPropagation();
             event.dataTransfer.dropEffect = 'copy';
         },
         onDrop: (event: DragEvent<HTMLElement>) => {
             event.preventDefault();
-            insertDraggedPath(event.dataTransfer.getData('text/plain'));
+            event.stopPropagation();
+            insertDraggedPath(event.dataTransfer.getData('text/plain'), event);
         },
         onExpand: () => setExpanded(true),
         onFocus: () => {

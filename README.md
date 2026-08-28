@@ -1,5 +1,9 @@
 <a href="https://puppetflow.com"><img src="https://www.puppetflow.com/img/puppetflow-promo-banner.png" width="100%" alt="Puppetflow" /></a>
 
+<div align="center">
+  <a href="https://www.producthunt.com/products/puppetflow?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-puppetflow" target="_blank" rel="noopener noreferrer"><img alt="Puppetflow - Visual browser automation platform | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1231380&amp;theme=light&amp;t=1787909846934"></a>
+</div>
+
 # Puppetflow
 
 Puppetflow is a self-hosted browser automation platform for writing, running, scheduling, and monitoring JavaScript workflows. Watch browser sessions live and take control whenever a run needs human attention.
