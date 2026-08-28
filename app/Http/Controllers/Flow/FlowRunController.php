@@ -21,7 +21,7 @@ use App\Services\BrowserStream\BrowserStreamTokenService;
 use App\Services\FeatureFlags\FeatureFlagService;
 use App\Services\Flow\ArtifactCleanupService;
 use App\Services\Flow\FlowRunnerService;
-use App\Services\Flow\FlowRunProductionService;
+use App\Services\Flow\FlowRunTerminalizer;
 use App\Services\Flow\Query\FlowTreeBuilder;
 use App\Services\Runtime\RunnerSignalService;
 use App\Services\Storage\ArtifactResponseFactory;
@@ -30,7 +30,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -45,7 +44,7 @@ class FlowRunController extends Controller
         private readonly ArtifactResponseFactory $artifactResponses,
         private readonly RunnerSignalService $runtimeSignals,
         private readonly FeatureFlagService $features,
-        private readonly FlowRunProductionService $productionRuns,
+        private readonly FlowRunTerminalizer $terminalizer,
         private readonly FlowTreeBuilder $trees,
         private readonly AuthorizationContextFactory $contexts,
     ) {}
@@ -187,39 +186,15 @@ class FlowRunController extends Controller
         /** @var User $user */
         $user = $request->user();
         $userName = $user->name;
-        $cancellation = DB::transaction(function () use ($run, $userName): ?string {
-            $lockedRun = FlowRun::query()
-                ->whereKey($run->getKey())
-                ->where('flow_id', $run->flow_id)
-                ->lockForUpdate()
-                ->first();
-
-            if (! $lockedRun || ! in_array($lockedRun->status, ['pending', 'running'], true)) {
-                return null;
-            }
-
-            if ($lockedRun->status === 'pending') {
-                $lockedRun->update([
-                    'status' => 'cancelled',
-                    'cancellation_requested_at' => now(),
-                    'error_message' => "Cancelled by user {$userName}.",
-                ]);
-                $this->productionRuns->handleLockedTerminalRun($lockedRun);
-
-                return 'cancelled';
-            }
-
-            $lockedRun->update([
-                'cancellation_requested_at' => now(),
-            ]);
-
-            return 'requested';
-        });
-        $requested = $cancellation !== null;
+        $requested = $this->terminalizer->cancelActiveRun($run, "Cancelled by user {$userName}.");
 
         if ($requested) {
-            Cache::put("flow_run_kill:{$run->id}", true, 600);
-            Cache::put("flow_run_killed_by:{$run->id}", $userName, 600);
+            try {
+                Cache::put("flow_run_kill:{$run->id}", true, 600);
+                Cache::put("flow_run_killed_by:{$run->id}", $userName, 600);
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
         }
 
         return $requested

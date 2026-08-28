@@ -20,6 +20,10 @@ Schedule::command('storage:cleanup-pending')
     ->everyMinute()
     ->withoutOverlapping()
     ->onOneServer();
+Schedule::command('runs:reconcile-stale')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->onOneServer();
 Schedule::command('entitlements:sync-stale')
     ->hourly()
     ->onOneServer();

@@ -82,6 +82,76 @@ final class FlowRunTerminalizer
         }, 3);
     }
 
+    public function cancelActiveRun(FlowRun $run, string $message): bool
+    {
+        return DB::transaction(function () use ($run, $message): bool {
+            $persistedRun = FlowRun::query()
+                ->whereKey($run->getKey())
+                ->lockForUpdate()
+                ->first();
+            if (
+                ! $persistedRun instanceof FlowRun
+                || ! in_array((string) $persistedRun->status, ['pending', 'running'], true)
+            ) {
+                return false;
+            }
+
+            $attributes = [
+                'status' => 'cancelled',
+                'cancellation_requested_at' => $persistedRun->cancellation_requested_at ?? now(),
+                'error_message' => $message,
+            ];
+            if ($persistedRun->status === 'running') {
+                $attributes['duration_ms'] = $this->durationMs($persistedRun);
+            }
+
+            $this->persistLocked($persistedRun, $run, $attributes, []);
+
+            return true;
+        }, 3);
+    }
+
+    public function recoverStaleRun(FlowRun $run, CarbonInterface $now, int $graceSeconds): ?string
+    {
+        return DB::transaction(function () use ($run, $now, $graceSeconds): ?string {
+            $persistedRun = FlowRun::query()
+                ->whereKey($run->getKey())
+                ->lockForUpdate()
+                ->first();
+            if (! $persistedRun instanceof FlowRun || $persistedRun->status !== 'running') {
+                return null;
+            }
+
+            if ($persistedRun->cancellation_requested_at !== null) {
+                $attributes = [
+                    'status' => 'cancelled',
+                    'error_message' => $persistedRun->error_message ?: 'Cancelled by user.',
+                    'duration_ms' => $this->durationMs($persistedRun),
+                ];
+            } else {
+                $flow = $persistedRun->flow;
+                $timeout = $flow instanceof Flow ? $flow->getEffectiveTimeoutSeconds() : 300;
+                $runningAt = $persistedRun->running_at;
+                if (
+                    ! $runningAt instanceof CarbonInterface
+                    || $runningAt->copy()->addSeconds($timeout + max(0, $graceSeconds))->isAfter($now)
+                ) {
+                    return null;
+                }
+
+                $attributes = [
+                    'status' => 'error',
+                    'error_message' => 'Run worker stopped before reporting a terminal status.',
+                    'duration_ms' => $this->durationMs($persistedRun),
+                ];
+            }
+
+            $this->persistLocked($persistedRun, $run, $attributes, []);
+
+            return $this->terminalStatus($attributes);
+        }, 3);
+    }
+
     public function failQueuedRun(FlowRun $run, mixed $error): bool
     {
         $message = $this->safeErrorMessage($run, $error);
@@ -191,19 +261,36 @@ final class FlowRunTerminalizer
 
     public function isCancelled(FlowRun $run): bool
     {
-        return Cache::get("flow_run_kill:{$run->id}", false)
-            || $run->newModelQuery()
-                ->whereKey($run->getKey())
-                ->where(function ($query): void {
-                    $query->where('status', 'cancelled')
-                        ->orWhereNotNull('cancellation_requested_at');
-                })
-                ->exists();
+        $persistedCancellation = $run->newModelQuery()
+            ->whereKey($run->getKey())
+            ->where(function ($query): void {
+                $query->where('status', 'cancelled')
+                    ->orWhereNotNull('cancellation_requested_at');
+            })
+            ->exists();
+        if ($persistedCancellation) {
+            return true;
+        }
+
+        try {
+            return (bool) Cache::get("flow_run_kill:{$run->id}", false);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function cancelledMessage(FlowRun $run): string
     {
-        $by = Cache::get("flow_run_killed_by:{$run->id}");
+        $persistedMessage = $run->newModelQuery()->whereKey($run->getKey())->value('error_message');
+        if (is_string($persistedMessage) && $persistedMessage !== '') {
+            return $persistedMessage;
+        }
+
+        try {
+            $by = Cache::get("flow_run_killed_by:{$run->id}");
+        } catch (\Throwable) {
+            $by = null;
+        }
 
         return is_scalar($by) && $by
             ? 'Cancelled by user '.(string) $by.'.'
@@ -237,10 +324,15 @@ final class FlowRunTerminalizer
      */
     private function applyCancellation(FlowRun $persistedRun, FlowRun $run, array $attributes): array
     {
-        if (
-            $persistedRun->cancellation_requested_at !== null
-            || Cache::get("flow_run_kill:{$run->id}", false)
-        ) {
+        $cancelled = $persistedRun->cancellation_requested_at !== null;
+        if (! $cancelled) {
+            try {
+                $cancelled = (bool) Cache::get("flow_run_kill:{$run->id}", false);
+            } catch (\Throwable) {
+            }
+        }
+
+        if ($cancelled) {
             $attributes['status'] = 'cancelled';
             $attributes['error_message'] = $this->cancelledMessage($run);
         }
