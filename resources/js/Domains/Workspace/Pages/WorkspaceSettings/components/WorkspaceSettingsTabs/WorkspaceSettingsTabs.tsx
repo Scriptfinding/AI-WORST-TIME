@@ -30,12 +30,6 @@ export default function WorkspaceSettingsTabs({
                     <Icon icon="lucide:network" width={14} height={14} />
                     Proxies
                 </SettingsTab>
-                {mcpEnabled && (
-                    <SettingsTab $active={activeTab === 'mcp'} onClick={() => onTabChange('mcp')}>
-                        <Icon icon="lucide:plug-zap" width={14} height={14} />
-                        Instance MCP
-                    </SettingsTab>
-                )}
                 {privateLibrariesEnabled && (
                     <SettingsTab
                         $active={activeTab === 'private-libraries'}
@@ -43,6 +37,12 @@ export default function WorkspaceSettingsTabs({
                     >
                         <Icon icon="lucide:git-branch" width={14} height={14} />
                         Private Libraries
+                    </SettingsTab>
+                )}
+                {mcpEnabled && (
+                    <SettingsTab $active={activeTab === 'mcp'} onClick={() => onTabChange('mcp')}>
+                        <Icon icon="lucide:plug-zap" width={14} height={14} />
+                        Instance MCP
                     </SettingsTab>
                 )}
             </SettingsTabs>

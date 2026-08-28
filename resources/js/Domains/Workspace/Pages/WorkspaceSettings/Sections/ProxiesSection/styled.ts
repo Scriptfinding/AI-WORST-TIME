@@ -63,6 +63,7 @@ export const TableWrapper = styled.div`
     width: 100%;
     max-width: 100%;
     min-width: 0;
+    margin-top: 18px;
     overflow-x: auto;
 `;
 
@@ -97,7 +98,17 @@ export const Table = styled.table`
         white-space: nowrap;
     }
 
-    tbody tr:last-child > td { border-bottom: 0; }
+    tbody tr:last-child > td {
+        border-bottom: 0;
+    }
+
+    tbody tr:last-child > td:first-child {
+        border-bottom-left-radius: ${({ theme }) => theme.radius.lg};
+    }
+
+    tbody tr:last-child > td:last-child {
+        border-bottom-right-radius: ${({ theme }) => theme.radius.lg};
+    }
 `;
 
 export const GroupRow = styled.tr`
@@ -230,10 +241,8 @@ export const OverflowButton = styled.button`
 `;
 
 export const OverflowMenu = styled.div`
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    z-index: 2000;
+    position: fixed;
+    z-index: 10000;
     min-width: 150px;
     border: 1px solid ${({ theme }) => theme.colors.border.default};
     border-radius: ${({ theme }) => theme.radius.md};
@@ -242,7 +251,7 @@ export const OverflowMenu = styled.div`
     padding: 6px;
 `;
 
-export const DangerMenuItem = styled.button`
+export const MenuItem = styled.button`
     width: 100%;
     display: flex;
     align-items: center;
@@ -250,9 +259,21 @@ export const DangerMenuItem = styled.button`
     border-radius: ${({ theme }) => theme.radius.sm};
     padding: 8px 10px;
     font-size: 12px;
+    color: ${({ theme }) => theme.colors.text.secondary};
+
+    &:hover {
+        background: ${({ theme }) => theme.colors.bg.hover};
+        color: ${({ theme }) => theme.colors.text.primary};
+    }
+`;
+
+export const DangerMenuItem = styled(MenuItem)`
     color: ${({ theme }) => theme.colors.accent.error};
 
-    &:hover { background: ${({ theme }) => theme.colors.accent.errorBg}; }
+    &:hover {
+        background: ${({ theme }) => theme.colors.accent.errorBg};
+        color: ${({ theme }) => theme.colors.accent.error};
+    }
 `;
 
 export const Form = styled.form`
@@ -292,9 +313,50 @@ export const Error = styled.div`
     line-height: 1.4;
 `;
 
+export const ConnectionStatus = styled.div<{ $success: boolean }>`
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid ${({ $success, theme }) =>
+        $success ? '#22c55e30' : `${theme.colors.accent.error}25`};
+    border-radius: ${({ theme }) => theme.radius.md};
+    background: ${({ $success, theme }) =>
+        $success ? '#22c55e0c' : `${theme.colors.accent.error}0a`};
+    color: ${({ $success, theme }) =>
+        $success ? '#22c55e' : theme.colors.accent.error};
+    font-size: 12px;
+    line-height: 1.4;
+
+    svg {
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    span {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    strong {
+        font-weight: 600;
+    }
+
+    small {
+        color: ${({ theme }) => theme.colors.text.secondary};
+        font-size: 11px;
+    }
+`;
+
 export const FormActions = styled.div`
     display: flex;
     align-items: center;
     gap: 12px;
     justify-content: flex-end;
+`;
+
+export const FormActionsSpacer = styled.span`
+    flex: 1;
 `;

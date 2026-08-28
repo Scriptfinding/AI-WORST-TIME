@@ -2,9 +2,10 @@ import type { OnMount } from '@monaco-editor/react';
 import { fetchAiModelSuggestions } from '@/Domains/AiModel/aiModelSuggestions';
 import { fetchChannelSuggestions } from './channelSuggestions';
 import { matchesCompletionModelUri, idCompletionItem, type CompletionModel, type CompletionPosition } from './completionCore';
+import { fetchDataTableSuggestions } from './dataTableSuggestions';
 import { fetchMailboxWatcherSuggestions } from './mailboxWatcherSuggestions';
 
-const REFERENCE_PATTERN = /\$\{(channels|mailboxWatchers|aiModels)\.([a-zA-Z0-9_.-]*)$/;
+const REFERENCE_PATTERN = /\$\{(channels|mailboxWatchers|aiModels|dataTables)\.([a-zA-Z0-9_.-]*)$/;
 const NAMESPACE_PATTERN = /\$\{([a-zA-Z]*)$/;
 
 const NAMESPACE_DETAILS: Record<string, string> = {
@@ -12,6 +13,7 @@ const NAMESPACE_DETAILS: Record<string, string> = {
     channels: 'Notification channels',
     mailboxWatchers: 'Mailbox watchers',
     aiModels: 'AI models',
+    dataTables: 'Data Tables',
 };
 
 export function registerJsonReferenceNamespaceCompletions(
@@ -87,7 +89,7 @@ export function registerJsonResourceReferenceCompletions(
                 return {
                     suggestions: channels.map(channel => idCompletionItem(channel, {
                         kind: monaco.languages.CompletionItemKind.Reference,
-                        detail: `${channel.provider} · ${channel.scope} · ${channel.id}`,
+                        detail: `${channel.provider} - ${channel.scope} - ${channel.id}`,
                         range,
                     })),
                 };
@@ -98,7 +100,18 @@ export function registerJsonResourceReferenceCompletions(
                 return {
                     suggestions: watchers.map(watcher => idCompletionItem(watcher, {
                         kind: monaco.languages.CompletionItemKind.Reference,
-                        detail: `${watcher.address} · ${watcher.id}`,
+                        detail: `${watcher.address} - ${watcher.id}`,
+                        range,
+                    })),
+                };
+            }
+
+            if (namespace === 'dataTables') {
+                const dataTables = await fetchDataTableSuggestions(flowId);
+                return {
+                    suggestions: dataTables.map(table => idCompletionItem(table, {
+                        kind: monaco.languages.CompletionItemKind.Reference,
+                        detail: `${table.visibility ?? 'private'} - ${table.columns.length} columns - ${table.id}`,
                         range,
                     })),
                 };
@@ -108,7 +121,7 @@ export function registerJsonResourceReferenceCompletions(
             return {
                 suggestions: models.map(aiModel => idCompletionItem(aiModel, {
                     kind: monaco.languages.CompletionItemKind.Reference,
-                    detail: `${aiModel.ai_integration.name} · ${aiModel.id}`,
+                    detail: `${aiModel.ai_integration.name} - ${aiModel.id}`,
                     range,
                 })),
             };

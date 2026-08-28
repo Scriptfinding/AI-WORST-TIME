@@ -107,7 +107,7 @@ export default function ActionList({
                                 <SharedActionInfo key={action.id}>
                                     <Icon icon="lucide:webhook" width={12} />
                                     {action.user?.name} - {action.label}
-                                    {scopeLabel && <SharedScope> · {scopeLabel}</SharedScope>}
+                                    {scopeLabel && <SharedScope> - {scopeLabel}</SharedScope>}
                                 </SharedActionInfo>
                             );
                         })}

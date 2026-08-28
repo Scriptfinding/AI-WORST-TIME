@@ -2,6 +2,8 @@ import { createElement, useEffect, useMemo, useState } from 'react';
 import { Icon } from '@/Shared/UI/Icon/Icon';
 import Button from '@/Shared/UI/Button/Button';
 import { useConfirm } from '@/Shared/Hooks/useConfirm';
+import LocalTableFilterToolbar from '@/Shared/UI/TableFilters/LocalTableFilterToolbar';
+import { matchesOwnershipScope } from '@/Shared/UI/TableFilters/options';
 import DeletePrivateLibraryMessage from './DeletePrivateLibraryMessage.pp';
 import PrivateLibraryForm from './PrivateLibraryForm.pp';
 import PrivateLibrariesTable from './PrivateLibrariesTable.pp';
@@ -42,16 +44,38 @@ export default function PrivateLibrariesSection({ libraries, teams, readOnly = f
     const [saving, setSaving] = useState(false);
     const [busyId, setBusyId] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [showAddModal, setShowAddModal] = useState(false);
+    const [showFormModal, setShowFormModal] = useState(false);
+    const [editing, setEditing] = useState<PrivateLibrary | null>(null);
     const [collapsedGroups, setCollapsedGroups] = useState(initialCollapsedGroups);
+    const [search, setSearch] = useState('');
+    const [scope, setScope] = useState<string | null>(null);
 
     const groups = useMemo(
         () => Array.from(new Set(items.map(item => item.group).filter(Boolean) as string[])).sort(),
         [items],
     );
+    const filteredItems = useMemo(() => {
+        const query = search.trim().toLowerCase();
+
+        return items.filter(item => {
+            if (!matchesOwnershipScope(item, scope)) return false;
+            if (!query) return true;
+
+            return [
+                item.label,
+                item.description,
+                item.repo,
+                item.url,
+                item.branch,
+                item.group,
+                item.owner?.name,
+                item.team?.name,
+            ].some(value => value?.toLowerCase().includes(query));
+        });
+    }, [items, scope, search]);
 
     const groupedItems = useMemo(() => {
-        const byGroup = items.reduce<Record<string, PrivateLibrary[]>>((acc, item) => {
+        const byGroup = filteredItems.reduce<Record<string, PrivateLibrary[]>>((acc, item) => {
             const key = item.group || 'Ungrouped';
             (acc[key] ??= []).push(item);
             return acc;
@@ -67,7 +91,7 @@ export default function PrivateLibrariesSection({ libraries, teams, readOnly = f
                 group,
                 items: groupItems.sort((a, b) => a.label.localeCompare(b.label)),
             }));
-    }, [items]);
+    }, [filteredItems]);
 
     useEffect(() => {
         try {
@@ -93,9 +117,32 @@ export default function PrivateLibrariesSection({ libraries, teams, readOnly = f
         setForm(current => ({ ...current, [key]: value }));
     };
 
-    const closeAddModal = () => {
+    const openCreate = () => {
+        setEditing(null);
+        setForm(emptyForm);
+        setError(null);
+        setShowFormModal(true);
+    };
+
+    const openEdit = (library: PrivateLibrary) => {
+        setEditing(library);
+        setForm({
+            label: library.label,
+            url: library.url,
+            branch: library.branch || 'main',
+            visibility: library.visibility,
+            user_id: library.user_id,
+            team_id: library.team_id,
+            group: library.group || '',
+        });
+        setError(null);
+        setShowFormModal(true);
+    };
+
+    const closeFormModal = () => {
         if (saving) return;
-        setShowAddModal(false);
+        setShowFormModal(false);
+        setEditing(null);
         setForm(emptyForm);
         setError(null);
     };
@@ -106,19 +153,31 @@ export default function PrivateLibrariesSection({ libraries, teams, readOnly = f
         setSaving(true);
         setError(null);
         try {
-            const library = await requestJson<PrivateLibrary>('/workspace/private-libraries', {
-                method: 'POST',
-                body: JSON.stringify({
-                    ...form,
-                    team_id: form.visibility === 'team' ? form.team_id : null,
-                    group: form.group || null,
-                }),
-            });
-            setItems(current => [...current, library].sort((a, b) => a.label.localeCompare(b.label)));
+            const library = await requestJson<PrivateLibrary>(
+                editing
+                    ? `/workspace/private-libraries/${editing.id}`
+                    : '/workspace/private-libraries',
+                {
+                    method: editing ? 'PUT' : 'POST',
+                    body: JSON.stringify({
+                        ...form,
+                        team_id: form.visibility === 'team' ? form.team_id : null,
+                        group: form.group || null,
+                    }),
+                },
+            );
+            setItems(current => (
+                editing
+                    ? current.map(item => item.id === library.id ? library : item)
+                    : [...current, library]
+            ).sort((a, b) => a.label.localeCompare(b.label)));
+            setEditing(null);
             setForm(emptyForm);
-            setShowAddModal(false);
+            setShowFormModal(false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unable to add this private library.');
+            setError(err instanceof Error
+                ? err.message
+                : `Unable to ${editing ? 'update' : 'add'} this private library.`);
         } finally {
             setSaving(false);
         }
@@ -180,7 +239,7 @@ export default function PrivateLibrariesSection({ libraries, teams, readOnly = f
                             Configured Libraries
                         </S.CardTitle>
                         {!readOnly && (
-                            <Button type="button" size="sm" onClick={() => { setError(null); setShowAddModal(true); }}>
+                            <Button type="button" size="sm" onClick={openCreate}>
                                 <Icon icon="lucide:plus" width={14} />
                                 <S.AddButtonLabel>Add private library</S.AddButtonLabel>
                             </Button>
@@ -189,9 +248,22 @@ export default function PrivateLibrariesSection({ libraries, teams, readOnly = f
                     <S.SectionHint>
                         Add GitHub repositories that follow the Puppetflow library structure. The repository is downloaded into cache when it is added, then refreshed only when you click Refresh.
                     </S.SectionHint>
-                    {error && !showAddModal && <S.ErrorBox>{error}</S.ErrorBox>}
-                    {items.length === 0 ? (
-                        <S.EmptyState>No private libraries configured.</S.EmptyState>
+                    <LocalTableFilterToolbar
+                        search={search}
+                        scope={scope}
+                        teams={teams}
+                        searchPlaceholder="Search libraries..."
+                        personalScopeLabel="Personal libraries"
+                        onSearchChange={setSearch}
+                        onScopeChange={setScope}
+                    />
+                    {error && !showFormModal && <S.ErrorBox>{error}</S.ErrorBox>}
+                    {filteredItems.length === 0 ? (
+                        <S.EmptyState>
+                            {items.length === 0
+                                ? 'No private libraries configured.'
+                                : 'No private libraries match these filters.'}
+                        </S.EmptyState>
                     ) : (
                         <PrivateLibrariesTable
                             groups={groupedItems}
@@ -199,6 +271,7 @@ export default function PrivateLibrariesSection({ libraries, teams, readOnly = f
                             busyId={busyId}
                             readOnly={readOnly}
                             onToggleGroup={toggleGroup}
+                            onEdit={openEdit}
                             onRefresh={refresh}
                             onDelete={library => { void requestDelete(library); }}
                         />
@@ -207,13 +280,14 @@ export default function PrivateLibrariesSection({ libraries, teams, readOnly = f
             </S.Rows>
 
             <PrivateLibraryForm
-                isOpen={showAddModal}
+                isOpen={showFormModal}
+                editing={editing !== null}
                 values={form}
                 groups={groups}
                 teams={teams}
                 saving={saving}
                 error={error}
-                onClose={closeAddModal}
+                onClose={closeFormModal}
                 onChange={updateForm}
                 onSubmit={() => { void submit(); }}
             />

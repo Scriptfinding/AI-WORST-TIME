@@ -73,6 +73,12 @@ export default function NavigationGroups({
                     visible: settings.snippets_enabled || promoteDisabledFeatures,
                 },
                 {
+                    label: 'Data Tables',
+                    icon: 'lucide:database',
+                    url: '/data-tables',
+                    active: currentPath.startsWith('/data-tables'),
+                },
+                {
                     label: 'AI Models',
                     icon: 'lucide:sparkles',
                     url: '/ai-models',

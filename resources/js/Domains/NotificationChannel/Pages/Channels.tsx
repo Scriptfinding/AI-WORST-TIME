@@ -67,7 +67,7 @@ export default function Channels({ channels, groups, messengerIntegrations, team
                     items={selectedChannels.map(channel => ({
                         id: channel.id,
                         title: channel.name,
-                        subtitle: `${channel.provider} · ${channel.config?.chat_name || channel.config?.chat_id || 'No destination'}`,
+                        subtitle: `${channel.provider} - ${channel.config?.chat_name || channel.config?.chat_id || 'No destination'}`,
                         icon: <Icon icon="lucide:bell-ring" width={22} height={22} />,
                     }))}
                 />

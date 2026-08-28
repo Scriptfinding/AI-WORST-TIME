@@ -15,7 +15,7 @@ return [
 
     'default' => env('FILESYSTEM_DISK', 'local'),
 
-    'puppetflow_storage_disk' => env('PUPPETFLOW_STORAGE_DISK', 'puppetflow-local'),
+    'app_storage_disk' => env('APP_STORAGE_DISK', 'puppetflow-local'),
 
     /*
     |--------------------------------------------------------------------------
@@ -58,7 +58,7 @@ return [
 
         'puppetflow-local' => [
             'driver' => 'local',
-            'root' => base_path((string) env('PUPPETFLOW_STORAGE_LOCAL_ROOT', 'data/storage')),
+            'root' => base_path((string) env('APP_STORAGE_LOCAL_ROOT', 'data/storage')),
             'throw' => true,
             'report' => false,
         ],
@@ -70,7 +70,7 @@ return [
             'token' => env('AWS_SESSION_TOKEN'),
             'region' => env('AWS_DEFAULT_REGION'),
             'bucket' => env('AWS_BUCKET'),
-            'root' => env('PUPPETFLOW_STORAGE_S3_PREFIX', ''),
+            'root' => env('APP_STORAGE_S3_PREFIX', ''),
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
@@ -85,7 +85,7 @@ return [
             'token' => env('R2_SESSION_TOKEN'),
             'region' => env('R2_REGION', 'auto'),
             'bucket' => env('R2_BUCKET'),
-            'root' => env('PUPPETFLOW_STORAGE_R2_PREFIX', ''),
+            'root' => env('APP_STORAGE_R2_PREFIX', ''),
             'url' => env('R2_URL'),
             'endpoint' => env('R2_ENDPOINT'),
             'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', false),

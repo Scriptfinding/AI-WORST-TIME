@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\DTO\Workspace\WorkspaceMutationData;
+use App\Models\DataTable;
 use App\Models\Flow;
 use App\Models\Folder;
 use App\Models\NotificationChannel;
@@ -118,6 +119,7 @@ class EnsureWorkspaceAccess
                 $parameter instanceof Model
                 && (
                     $parameter instanceof Flow
+                    || $parameter instanceof DataTable
                     || $parameter instanceof Folder
                     || $parameter instanceof UserVariable
                     || $parameter instanceof NotificationChannel

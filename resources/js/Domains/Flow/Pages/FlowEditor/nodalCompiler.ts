@@ -7,6 +7,7 @@ import {
     DEFAULT_OUTPUT_PORT,
     FILTER_NODE_NAME,
     IF_ELSE_NODE_NAME,
+    isConditionalBranchNodeName,
     LIMIT_NODE_NAME,
     LOOP_NODE_NAME,
     META_NODE_NAME,
@@ -22,6 +23,10 @@ import { formatParameterForCompiler, normalizeParameterValue, normalizeScalarPar
 import { SYSTEM_FUNCTION_NODE_ID } from './Panes/NodalEditorPane/utils/functionGraph';
 import { getFunctionArgumentNames } from './Panes/NodalEditorPane/utils/functionArguments';
 import { getNodeFlowPortDefinitions, isCallbackFlowPort } from './Panes/NodalEditorPane/utils/flowParameters';
+import {
+    analyzeStructuredGraph,
+    structuredBranchKey,
+} from './Panes/NodalEditorPane/utils/edges';
 import {
     SYSTEM_RUN_POSITION,
     SYSTEM_TERMINATE_POSITION,
@@ -383,6 +388,10 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
         outgoing.set(edge.sourceNodeId, [...(outgoing.get(edge.sourceNodeId) ?? []), edge]);
         incoming.set(edge.targetNodeId, [...(incoming.get(edge.targetNodeId) ?? []), edge]);
     });
+    const structuredGraph = analyzeStructuredGraph(normalized.nodes, normalized.edges);
+    if (!structuredGraph.valid) {
+        throw new Error('The visual flow contains an invalid or unstructured connection.');
+    }
 
     const collectExecutableNodeIds = (startId: string, excludedNodeIds = new Set<string>()) => {
         const executableNodeIds = new Set<string>();
@@ -409,45 +418,10 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
     const entryNodeId = context === 'function' ? SYSTEM_FUNCTION_NODE_ID : SYSTEM_RUN_NODE_ID;
     const runNodeIds = collectExecutableNodeIds(entryNodeId, finallyNodeIds);
 
-    const nextNodeId = (nodeId: string, port = DEFAULT_OUTPUT_PORT) => {
-        return outgoing.get(nodeId)?.find(edge => (edge.sourcePort ?? DEFAULT_OUTPUT_PORT) === port)?.targetNodeId ?? null;
-    };
-
-    const reachableNodes = (startId: string | null): Set<string> => {
-        const seen = new Set<string>();
-        const visit = (nodeId: string | null) => {
-            if (!nodeId || seen.has(nodeId)) return;
-            seen.add(nodeId);
-            for (const edge of outgoing.get(nodeId) ?? []) {
-                visit(edge.targetNodeId);
-            }
-        };
-
-        visit(startId);
-        return seen;
-    };
-
-    const findCommonMerge = (leftStart: string | null, rightStart: string | null) => {
-        if (!leftStart || !rightStart) return null;
-        if (leftStart === rightStart) return leftStart;
-        const rightReachable = reachableNodes(rightStart);
-        // BFS from the left branch: the first node also reachable from the right
-        // branch is the convergence point, whether or not it is a Merge node.
-        // Compiling it after the if/else keeps shared downstream nodes out of
-        // a single branch.
-        const queue = [leftStart];
-        const seen = new Set<string>();
-        while (queue.length > 0) {
-            const nodeId = queue.shift();
-            if (!nodeId || seen.has(nodeId)) continue;
-            seen.add(nodeId);
-            if (rightReachable.has(nodeId)) return nodeId;
-            for (const edge of outgoing.get(nodeId) ?? []) {
-                queue.push(edge.targetNodeId);
-            }
-        }
-        return null;
-    };
+    const nextEdge = (nodeId: string, port = DEFAULT_OUTPUT_PORT) => (
+        outgoing.get(nodeId)?.find(edge => (edge.sourcePort ?? DEFAULT_OUTPUT_PORT) === port) ?? null
+    );
+    const nextNodeId = (nodeId: string, port = DEFAULT_OUTPUT_PORT) => nextEdge(nodeId, port)?.targetNodeId ?? null;
 
     const compiledCounters = { result: 0, loop: 0 };
     const lineMarker = (indent: string) => `${indent}__nopRunLine(__NOP_LINE__);`;
@@ -455,6 +429,9 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
         `${indent}__nopRunNodeStart(${nodeId});`,
     ] : [];
     const markNodeEnd = (indent: string, nodeId: string) => instrumentRunProgress ? [`${indent}__nopRunNodeEnd(${nodeId});`] : [];
+    const markEdge = (indent: string, edge: NodalGraph['edges'][number] | null) => instrumentRunProgress && edge
+        ? [`${indent}__nopRunEdge(${JSON.stringify(edge.id)});`]
+        : [];
     const shouldMarkCompiledLine = (stripped: string) => {
         const trimmed = stripped.trim();
         if (!trimmed || trimmed.startsWith('*')) return false;
@@ -655,6 +632,20 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
         return output;
     };
     const nextResultName = () => `nodeResult${++compiledCounters.result}`;
+    function compileNext(
+        sourceNodeId: string,
+        sourcePort: string,
+        indentLevel: number,
+        visited: Set<string>,
+        stopAtNodeId: string | null = null,
+        allowedNodeIds: Set<string> | null = null,
+    ): string[] {
+        const edge = nextEdge(sourceNodeId, sourcePort);
+        return [
+            ...markEdge(makeIndent(indentLevel), edge),
+            ...compileFrom(edge?.targetNodeId ?? null, indentLevel, visited, stopAtNodeId, allowedNodeIds),
+        ];
+    }
 
     const compileFrom = (
         nodeId: string | null,
@@ -679,14 +670,14 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
         nextVisited.add(nodeId);
 
         if (node.deactivated) {
-            const continuationNodeId = node.name === LOOP_NODE_NAME
-                ? nextNodeId(node.id, 'done')
-                : node.name === IF_ELSE_NODE_NAME
-                    ? nextNodeId(node.id, 'true')
-                    : nextNodeId(node.id);
+            const continuationPort = node.name === LOOP_NODE_NAME
+                ? 'done'
+                : isConditionalBranchNodeName(node.name)
+                    ? 'true'
+                    : DEFAULT_OUTPUT_PORT;
             return [
                 `${indent}// Deactivated node: ${node.id}`,
-                ...compileFrom(continuationNodeId, indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
+                ...compileNext(node.id, continuationPort, indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
             ];
         }
 
@@ -697,7 +688,7 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
                 ...markNodeStart(indent, safeNodeId),
                 indentCodeNodeSource(code).split('\n').map(line => `${indent}${line.trimStart()}`).join('\n'),
                 ...markNodeEnd(indent, safeNodeId),
-                ...compileFrom(nextNodeId(node.id), indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
+                ...compileNext(node.id, DEFAULT_OUTPUT_PORT, indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
             ];
         }
 
@@ -706,19 +697,17 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
                 `${indent}// No-op node: ${node.id}`,
                 ...markNodeStart(indent, safeNodeId),
                 ...markNodeEnd(indent, safeNodeId),
-                ...compileFrom(nextNodeId(node.id), indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
+                ...compileNext(node.id, DEFAULT_OUTPUT_PORT, indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
             ];
         }
 
         if (node.name === IF_ELSE_NODE_NAME) {
-            const trueStart = nextNodeId(node.id, 'true');
-            const falseStart = nextNodeId(node.id, 'false');
-            const mergeNodeId = findCommonMerge(trueStart, falseStart);
+            const mergeNodeId = structuredGraph.joinsByIfNodeId.get(node.id) ?? null;
             const lines = [
                 `${indent}if (await $renderExpression(${ifConditionTemplate(node.values)})) {`,
-                ...compileFrom(trueStart, indentLevel + 1, nextVisited, mergeNodeId, allowedNodeIds),
+                ...compileNext(node.id, 'true', indentLevel + 1, nextVisited, mergeNodeId, allowedNodeIds),
                 `${indent}} else {`,
-                ...compileFrom(falseStart, indentLevel + 1, nextVisited, mergeNodeId, allowedNodeIds),
+                ...compileNext(node.id, 'false', indentLevel + 1, nextVisited, mergeNodeId, allowedNodeIds),
                 `${indent}}`,
             ];
 
@@ -730,9 +719,35 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
             ];
         }
 
+        if (isConditionalBranchNodeName(node.name)) {
+            const entry = ALL_HELP_ENTRIES.find(item => item.name === node.name);
+            const args = getSignatureArgs(entry?.signature ?? `${node.name}()`);
+            const callArgs = args
+                .map(arg => arg.replace(/\?$/, '').replace(/^\.\.\./, ''))
+                .map(arg => formatParameterForCompiler(node.values?.[arg], {
+                    awaitExpressions: true,
+                    valueType: entry ? getParameterMeta(entry, arg).valueType : undefined,
+                }))
+                .join(', ');
+            const resultName = nextResultName();
+            const mergeNodeId = structuredGraph.joinsByIfNodeId.get(node.id) ?? null;
+
+            return [
+                ...markNodeStart(indent, safeNodeId),
+                `${indent}const ${resultName} = await ${node.name}(${callArgs});`,
+                ...assignNodeResult(indent, safeNodeId, resultName, runOutputKey(node.values, node.id)),
+                `${indent}if (${resultName}) {`,
+                ...compileNext(node.id, 'true', indentLevel + 1, nextVisited, mergeNodeId, allowedNodeIds),
+                `${indent}} else {`,
+                ...compileNext(node.id, 'false', indentLevel + 1, nextVisited, mergeNodeId, allowedNodeIds),
+                `${indent}}`,
+                ...markNodeEnd(indent, safeNodeId),
+                ...compileFrom(mergeNodeId, indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
+            ];
+        }
+
         if (node.name === LOOP_NODE_NAME) {
             const mode = rawValue(node.values, 'mode', 'items');
-            const bodyStart = nextNodeId(node.id, 'loop');
             const doneStart = nextNodeId(node.id, 'done');
             const maxIterations = numericExpression(node.values, 'maxIterations', '100');
             const loopIndex = ++compiledCounters.loop;
@@ -746,7 +761,7 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
                     `${indent}    const $item = loopIndex${loopIndex};`,
                     `${indent}    const $index = loopIndex${loopIndex};`,
                     `${indent}    $run.$loop = { index: $index };`,
-                    ...compileFrom(bodyStart, indentLevel + 1, nextVisited, doneStart, allowedNodeIds),
+                    ...compileNext(node.id, 'loop', indentLevel + 1, nextVisited, doneStart, allowedNodeIds),
                     `${indent}}`,
                     `${indent}if (${previousLoopName} === undefined) delete $run.$loop; else $run.$loop = ${previousLoopName};`,
                 );
@@ -758,7 +773,7 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
                     `${indent}    const $index = loopIndex${loopIndex};`,
                     `${indent}    $run.$loop = { index: $index };`,
                     `${indent}    if (await $renderExpression(${expressionTemplate(node.values, 'condition', '{{ false }}')})) break;`,
-                    ...compileFrom(bodyStart, indentLevel + 1, nextVisited, doneStart, allowedNodeIds),
+                    ...compileNext(node.id, 'loop', indentLevel + 1, nextVisited, doneStart, allowedNodeIds),
                     `${indent}}`,
                     `${indent}if (${previousLoopName} === undefined) delete $run.$loop; else $run.$loop = ${previousLoopName};`,
                 );
@@ -768,7 +783,7 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
                     `${indent}const ${previousLoopName} = $run.$loop;`,
                     `${indent}for (const [$index, $item] of (Array.isArray(loopItems${loopIndex}) ? loopItems${loopIndex} : []).entries()) {`,
                     `${indent}    $run.$loop = { index: $index, item: $item };`,
-                    ...compileFrom(bodyStart, indentLevel + 1, nextVisited, doneStart, allowedNodeIds),
+                    ...compileNext(node.id, 'loop', indentLevel + 1, nextVisited, doneStart, allowedNodeIds),
                     `${indent}}`,
                     `${indent}if (${previousLoopName} === undefined) delete $run.$loop; else $run.$loop = ${previousLoopName};`,
                 );
@@ -778,7 +793,7 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
                 ...markNodeStart(indent, safeNodeId),
                 ...loopLines,
                 ...markNodeEnd(indent, safeNodeId),
-                ...compileFrom(doneStart, indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
+                ...compileNext(node.id, 'done', indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
             ];
         }
 
@@ -793,7 +808,7 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
                 `${indent}}`,
                 ...assignNodeResult(indent, safeNodeId, resultName, runOutputKey(node.values, node.id)),
                 ...markNodeEnd(indent, safeNodeId),
-                ...compileFrom(nextNodeId(node.id), indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
+                ...compileNext(node.id, DEFAULT_OUTPUT_PORT, indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
             ];
         }
 
@@ -807,7 +822,7 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
                 `${indent}const ${resultName} = (Array.isArray(${resultName}Source) ? ${resultName}Source : []).slice(${resultName}Offset, ${resultName}Offset + ${resultName}Count);`,
                 ...assignNodeResult(indent, safeNodeId, resultName, runOutputKey(node.values, node.id)),
                 ...markNodeEnd(indent, safeNodeId),
-                ...compileFrom(nextNodeId(node.id), indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
+                ...compileNext(node.id, DEFAULT_OUTPUT_PORT, indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
             ];
         }
 
@@ -823,7 +838,7 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
                 `${indent}Object.entries(${resultName} && typeof ${resultName} === 'object' && !Array.isArray(${resultName}) ? ${resultName} : {}).forEach(([key, value]) => { $run[key] = value; });`,
                 ...assignNodeResult(indent, safeNodeId, resultName),
                 ...markNodeEnd(indent, safeNodeId),
-                ...compileFrom(nextNodeId(node.id), indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
+                ...compileNext(node.id, DEFAULT_OUTPUT_PORT, indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
             ];
         }
 
@@ -844,7 +859,7 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
                 `${indent}}`,
                 ...assignNodeResult(indent, safeNodeId, resultName),
                 ...markNodeEnd(indent, safeNodeId),
-                ...compileFrom(nextNodeId(node.id), indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
+                ...compileNext(node.id, DEFAULT_OUTPUT_PORT, indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
             ];
         }
 
@@ -863,7 +878,7 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
                 `${indent}}`,
                 ...assignNodeResult(indent, safeNodeId, resultName, runOutputKey(node.values, node.id)),
                 ...markNodeEnd(indent, safeNodeId),
-                ...compileFrom(nextNodeId(node.id), indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
+                ...compileNext(node.id, DEFAULT_OUTPUT_PORT, indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
             ];
         }
 
@@ -882,7 +897,7 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
                 `${indent}const ${resultName} = ${mergedSource};`,
                 ...assignNodeResult(indent, safeNodeId, resultName, runOutputKey(node.values, node.id)),
                 ...markNodeEnd(indent, safeNodeId),
-                ...compileFrom(nextNodeId(node.id), indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
+                ...compileNext(node.id, DEFAULT_OUTPUT_PORT, indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
             ];
         }
 
@@ -898,14 +913,14 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
                 `${indent}const ${resultName} = await ${localFunctionSymbol(node.localFunctionId)}($page${callArgs ? `, ${callArgs}` : ''});`,
                 ...assignNodeResult(indent, safeNodeId, resultName, runOutputKey(node.values, node.id)),
                 ...markNodeEnd(indent, safeNodeId),
-                ...compileFrom(nextNodeId(node.id), indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
+                ...compileNext(node.id, DEFAULT_OUTPUT_PORT, indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
             ];
         }
 
         if (!/^[A-Za-z_$][\w$]*$/.test(node.name)) {
             return [
                 `${indent}// Skipping node ${node.id}: invalid helper name.`,
-                ...compileFrom(nextNodeId(node.id), indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
+                ...compileNext(node.id, DEFAULT_OUTPUT_PORT, indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
             ];
         }
 
@@ -916,7 +931,6 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
                 : Object.keys(node.values ?? {}).filter(key => key !== NODE_RUN_OUTPUT_KEY)
             : getSignatureArgs(entry?.signature ?? `${node.name}()`);
         const callbackPorts = getNodeFlowPortDefinitions(entry).filter(isCallbackFlowPort);
-        const continueStart = nextNodeId(node.id);
         const callArgs = args
             .map(arg => arg.replace(/\?$/, '').replace(/^\.\.\./, ''))
             .map(arg => {
@@ -927,12 +941,14 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
 
                 for (const callbackPort of callbackPorts.filter(candidate => candidate.parameter.argument === arg)) {
                     const { parameter } = callbackPort;
-                    const flowStart = nextNodeId(node.id, callbackPort.id);
-                    if (!flowStart) continue;
+                    if (!nextEdge(node.id, callbackPort.id)) continue;
 
-                    const convergenceNodeId = findCommonMerge(flowStart, continueStart);
-                    const callbackLines = compileFrom(
-                        flowStart,
+                    const convergenceNodeId = structuredGraph.joinsByBranchPort.get(
+                        structuredBranchKey(node.id, callbackPort.id),
+                    ) ?? null;
+                    const callbackLines = compileNext(
+                        node.id,
+                        callbackPort.id,
                         indentLevel + 1,
                         nextVisited,
                         convergenceNodeId,
@@ -958,11 +974,11 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
             `${indent}const ${resultName} = await ${node.name}(${callArgs});`,
             ...assignNodeResult(indent, safeNodeId, resultName, runOutputKey(node.values, node.id)),
             ...markNodeEnd(indent, safeNodeId),
-            ...compileFrom(nextNodeId(node.id), indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
+            ...compileNext(node.id, DEFAULT_OUTPUT_PORT, indentLevel, nextVisited, stopAtNodeId, allowedNodeIds),
         ];
     };
 
-    const lines = markCompiledLines(compileFrom(nextNodeId(entryNodeId), 1, new Set(), null, runNodeIds));
+    const lines = markCompiledLines(compileNext(entryNodeId, DEFAULT_OUTPUT_PORT, 1, new Set(), null, runNodeIds));
     const finallyStartNodeIds = [...finallyNodeIds]
         .filter(nodeId => !(incoming.get(nodeId) ?? []).some(edge => finallyNodeIds.has(edge.sourceNodeId)))
         .sort((left, right) => {
@@ -972,7 +988,13 @@ export const compileNodalGraphToCode = (graph: NodalGraph, options: CompileNodal
             if (leftNode.y !== rightNode.y) return leftNode.y - rightNode.y;
             return leftNode.x - rightNode.x;
         });
-    const finallyLines = markCompiledLines(finallyStartNodeIds.flatMap(nodeId => compileFrom(nodeId, 1, new Set(), null, finallyNodeIds)));
+    const finallyLines = markCompiledLines(finallyStartNodeIds.flatMap(nodeId => [
+        ...markEdge(
+            makeIndent(1),
+            (incoming.get(nodeId) ?? []).find(edge => !finallyNodeIds.has(edge.sourceNodeId)) ?? null,
+        ),
+        ...compileFrom(nodeId, 1, new Set(), null, finallyNodeIds),
+    ]));
 
     const graphJson = JSON.stringify(snapshotGraph, null, 2)
         .split('\n')

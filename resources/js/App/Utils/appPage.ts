@@ -25,6 +25,7 @@ const PAGE_TITLES: Record<string, string> = {
     'Auth/TwoFactorSetup/TwoFactorSetup': 'Set Up Two-Factor Authentication',
     'Channels/Channels': 'Notification Channels',
     'Dashboard/Dashboard': 'Dashboard',
+    'DataTable/DataTables': 'Data Tables',
     'Flow/FlowCreate/FlowCreate': 'Create Flow',
     'Flow/FlowExplorer/FlowExplorer': 'Flow Explorer',
     'Flow/Runs/Runs': 'Runs',

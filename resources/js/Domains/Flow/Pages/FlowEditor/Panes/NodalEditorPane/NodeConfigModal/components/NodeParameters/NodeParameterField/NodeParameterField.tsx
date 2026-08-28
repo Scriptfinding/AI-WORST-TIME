@@ -27,6 +27,11 @@ import IfConditionBuilder from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEdito
 import ObjectParameterInput from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/NodeConfigModal/components/ObjectParameterInput/ObjectParameterInput';
 import GetterMapInput from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/NodeConfigModal/components/GetterMapInput/GetterMapInput';
 import AiModelSelect from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/NodeConfigModal/components/AiModelSelect/AiModelSelect';
+import DataTableStructuredInput from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/NodeConfigModal/components/DataTableStructuredInput/DataTableStructuredInput';
+import {
+    useNodeValidationResources,
+    useRefreshNodeValidationResources,
+} from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/contexts/NodeValidationContext';
 import * as S from '../shared.styled';
 
 const LOOP_MODE_OPTIONS = [
@@ -70,6 +75,8 @@ export default function NodeParameterField({
 }: NodeParameterFieldProps) {
     const hint = getParameterHint(entry, arg);
     const meta = getParameterMeta(entry, arg);
+    const validationResources = useNodeValidationResources();
+    const refreshValidationResources = useRefreshNodeValidationResources();
     const cleanArg = arg.replace(/\?$/, '').replace(/^\.\.\./, '');
     const fieldLabel = getNodeParameterDisplayLabel(entry, cleanArg);
     const isTabName = meta.input === 'tab-name';
@@ -94,6 +101,126 @@ export default function NodeParameterField({
     }, []);
 
     if (meta.valueType === 'flow') return null;
+
+    if (meta.input === 'data-table') {
+        const value = normalizeScalarParameterValue(node.values[cleanArg]);
+        const dataTables = validationResources.dataTables?.items ?? [];
+        const options = dataTables.map(table => ({
+            value: String(table.id),
+            label: table.name,
+            detail: table.can_manage
+                ? `${table.columns.length} columns`
+                : `${table.columns.length} columns, read only`,
+            icon: 'lucide:table-properties',
+        }));
+        const clearTableValues = () => {
+            if (Object.prototype.hasOwnProperty.call(node.values, 'values')) {
+                onUpdateValue(node.id, 'values', { mode: 'object', inputMode: 'form', value: '{}', fields: [] });
+            }
+            if (Object.prototype.hasOwnProperty.call(node.values, 'filters')) {
+                onUpdateValue(node.id, 'filters', { mode: 'fixed', value: '[]' });
+            }
+        };
+        const updateSelection = (nextValue: string) => {
+            onUpdateValue(node.id, cleanArg, { mode: 'fixed', value: nextValue });
+            clearTableValues();
+        };
+
+        return (
+            <ExpressionInput
+                label={fieldLabel}
+                hint={hint}
+                value={value}
+                outputData={expressionOutputData}
+                autocompleteContext={autocompleteContext}
+                flowId={flowId}
+                readOnly={readOnly}
+                invalid={Boolean(missingRequiredIssue)}
+                errorMessage={missingRequiredIssue?.message}
+                fixedInput={(
+                    <CustomSelect
+                        value={value.value}
+                        disabled={readOnly}
+                        invalid={Boolean(missingRequiredIssue)}
+                        loading={validationResources.dataTables?.status === 'loading'}
+                        onRefresh={refreshValidationResources}
+                        options={options}
+                        searchThreshold={0}
+                        placeholder="Select a Data Table..."
+                        onChange={updateSelection}
+                    />
+                )}
+                onChange={nextValue => onUpdateValue(node.id, cleanArg, nextValue)}
+            />
+        );
+    }
+
+    if (meta.input === 'data-table-values') {
+        const tableId = normalizeScalarParameterValue(node.values.tableId).value;
+        const table = validationResources.dataTables?.items
+            .find(candidate => String(candidate.id) === tableId);
+        const objectFields = Object.fromEntries((table?.columns ?? []).map(column => [
+            column.name,
+            {
+                label: column.name,
+                description: `${column.type} value for ${column.name}.`,
+                input: column.type === 'number'
+                    ? 'number' as const
+                    : column.type === 'boolean'
+                        ? 'boolean' as const
+                        : 'text' as const,
+                valueType: column.type === 'datetime' ? 'string' as const : column.type,
+            },
+        ]));
+
+        return (
+            <ObjectParameterInput
+                label={fieldLabel}
+                path={cleanArg}
+                meta={{
+                    ...meta,
+                    input: 'object',
+                    valueType: 'object',
+                    objectFields,
+                    placeholder: '{\n  "column_name": "value"\n}',
+                }}
+                value={node.values[cleanArg]}
+                outputData={expressionOutputData}
+                autocompleteContext={autocompleteContext}
+                currentSiteUrl={currentSiteUrl}
+                flowId={flowId}
+                readOnly={readOnly}
+                invalid={Boolean(missingRequiredIssue)}
+                errorMessage={missingRequiredIssue?.message}
+                validationIssues={nestedRequiredIssues}
+                onChange={value => onUpdateValue(node.id, cleanArg, value)}
+            />
+        );
+    }
+
+    if (meta.input === 'data-table-filters' || meta.input === 'data-table-columns') {
+        const tableId = normalizeScalarParameterValue(node.values.tableId).value;
+        const columns = validationResources.dataTables?.items
+            .find(table => String(table.id) === tableId)
+            ?.columns ?? [];
+
+        return (
+            <DataTableStructuredInput
+                kind={meta.input}
+                label={fieldLabel}
+                description={hint || meta.description}
+                value={node.values[cleanArg]}
+                columns={columns}
+                outputData={expressionOutputData}
+                autocompleteContext={autocompleteContext}
+                flowId={flowId}
+                readOnly={readOnly}
+                invalid={Boolean(missingRequiredIssue)}
+                errorMessage={missingRequiredIssue?.message}
+                onChange={value => onUpdateValue(node.id, cleanArg, value)}
+            />
+        );
+    }
 
     if (entry.name === IF_ELSE_NODE_NAME && cleanArg === 'condition') {
         return (

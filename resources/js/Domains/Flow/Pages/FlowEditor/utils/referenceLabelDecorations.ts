@@ -2,6 +2,7 @@ import type { OnMount } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 import { fetchAiModelSuggestions } from '@/Domains/AiModel/aiModelSuggestions';
 import { fetchChannelSuggestions } from './channelSuggestions';
+import { fetchDataTableSuggestions } from './dataTableSuggestions';
 import { fetchMailboxWatcherSuggestions } from './mailboxWatcherSuggestions';
 import { fetchSnippetSuggestions, invalidateSnippetCache } from './snippetSuggestions';
 import { fetchVariableSuggestions } from './variableSuggestions';
@@ -25,10 +26,11 @@ async function buildLabelMap(flowId: Id | null, force: boolean): Promise<Map<str
         fetchAiModelSuggestions(force),
         fetchSnippetSuggestions(),
         flowId ? fetchMailboxWatcherSuggestions(flowId, force) : Promise.resolve([]),
+        flowId ? fetchDataTableSuggestions(flowId, force) : Promise.resolve([]),
     ] as const);
 
     const map = new Map<string, string>();
-    const [variables, channels, aiModels, snippets, watchers] = results;
+    const [variables, channels, aiModels, snippets, watchers, dataTables] = results;
 
     if (variables.status === 'fulfilled') {
         for (const variable of variables.value) {
@@ -46,6 +48,9 @@ async function buildLabelMap(flowId: Id | null, force: boolean): Promise<Map<str
     }
     if (watchers.status === 'fulfilled') {
         for (const watcher of watchers.value) map.set(String(watcher.id), watcher.name);
+    }
+    if (dataTables.status === 'fulfilled') {
+        for (const table of dataTables.value) map.set(String(table.id), table.name);
     }
 
     return map;

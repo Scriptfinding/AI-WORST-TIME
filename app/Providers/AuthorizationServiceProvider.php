@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\AiModel;
+use App\Models\DataTable;
 use App\Models\Flow;
 use App\Models\FlowAction;
 use App\Models\FlowRun;
@@ -17,6 +18,7 @@ use App\Models\UserVariable;
 use App\Models\Workspace;
 use App\Models\WorkspaceTeam;
 use App\Policies\AiModel\AiModelPolicy;
+use App\Policies\DataTable\DataTablePolicy;
 use App\Policies\Flow\FlowActionPolicy;
 use App\Policies\Flow\FlowPolicy;
 use App\Policies\Flow\FlowRunPolicy;
@@ -38,6 +40,7 @@ class AuthorizationServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(AiModel::class, AiModelPolicy::class);
+        Gate::policy(DataTable::class, DataTablePolicy::class);
         Gate::policy(Flow::class, FlowPolicy::class);
         Gate::policy(FlowRun::class, FlowRunPolicy::class);
         Gate::policy(FlowAction::class, FlowActionPolicy::class);

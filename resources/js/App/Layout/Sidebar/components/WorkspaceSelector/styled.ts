@@ -1,4 +1,4 @@
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 
 export const Wrapper = styled.div<{ $collapsed?: boolean }>`
     position: relative;
@@ -32,15 +32,17 @@ export const Name = styled.span`
     white-space: nowrap;
 `;
 
-export const Item = styled.a<{ $active?: boolean }>`
+export const Item = styled.a<{ $active?: boolean; $highlighted?: boolean }>`
     display: flex;
+    flex-shrink: 0;
     align-items: center;
     gap: 8px;
     padding: 7px 10px;
-    border-radius: ${({ theme }) => theme.radius.md};
-    font-size: 13px;
+    border-radius: ${({ theme }) => theme.radius.sm};
+    font-size: 12px;
     color: ${({ theme }) => theme.colors.text.secondary};
-    transition: all ${({ theme }) => theme.transition.fast};
+    background: ${({ $active, theme }) => ($active ? theme.colors.bg.hover : 'transparent')};
+    transition: background ${({ theme }) => theme.transition.fast};
     cursor: pointer;
     overflow: hidden;
     white-space: nowrap;
@@ -51,18 +53,18 @@ export const Item = styled.a<{ $active?: boolean }>`
         flex-shrink: 0;
     }
 
-    ${({ $active, theme }) =>
-        $active
-            ? css`
-                  background: ${theme.colors.bg.hover};
-                  color: ${theme.colors.text.primary};
-              `
-            : css`
-                  &:hover {
-                      background: ${theme.colors.brand};
-                      color: ${theme.colors.white};
-                  }
-              `}
+    ${({ $active, $highlighted, theme }) =>
+        ($active || $highlighted) && `color: ${theme.colors.text.primary};`}
+
+    ${({ $highlighted, theme }) =>
+        $highlighted &&
+        `background: color-mix(in srgb, ${theme.colors.bg.hover} 55%, transparent);`}
+
+    &:hover {
+        color: ${({ theme }) => theme.colors.text.primary};
+        background: ${({ theme }) =>
+            `color-mix(in srgb, ${theme.colors.bg.hover} 55%, transparent)`};
+    }
 `;
 
 export const Dropdown = styled.div`
@@ -87,6 +89,7 @@ export const Dropdown = styled.div`
 `;
 
 export const DropdownTitle = styled.div`
+    flex-shrink: 0;
     padding: 4px 8px;
     font-size: 10px;
     font-weight: 600;
@@ -94,6 +97,51 @@ export const DropdownTitle = styled.div`
     letter-spacing: 0.05em;
     color: ${({ theme }) => theme.colors.text.tertiary};
     margin-bottom: 4px;
+`;
+
+export const SearchWrapper = styled.div`
+    position: sticky;
+    top: -6px;
+    z-index: 1;
+    display: flex;
+    flex-shrink: 0;
+    margin-bottom: 2px;
+    padding-bottom: 4px;
+    background: ${({ theme }) => theme.colors.bg.primary};
+`;
+
+export const SearchInput = styled.input`
+    width: 100%;
+    min-width: 0;
+    padding: 8px 9px;
+    border: 1px solid ${({ theme }) => theme.colors.border.default};
+    border-radius: ${({ theme }) => theme.radius.sm};
+    outline: none;
+    background: ${({ theme }) => theme.colors.bg.secondary};
+    color: ${({ theme }) => theme.colors.text.primary};
+    font-size: 12px;
+
+    &::placeholder {
+        color: ${({ theme }) => theme.colors.text.tertiary};
+    }
+
+    &::-webkit-search-cancel-button {
+        width: 12px;
+        height: 12px;
+        appearance: none;
+        cursor: pointer;
+        background: ${({ theme }) => theme.colors.text.tertiary};
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M18 6 6 18M6 6l12 12' fill='none' stroke='black' stroke-linecap='round' stroke-width='2'/%3E%3C/svg%3E")
+            center / contain no-repeat;
+    }
+`;
+
+export const EmptyState = styled.div`
+    flex-shrink: 0;
+    padding: 12px 10px;
+    color: ${({ theme }) => theme.colors.text.tertiary};
+    font-size: 12px;
+    text-align: center;
 `;
 
 export const ItemLabel = styled.span`

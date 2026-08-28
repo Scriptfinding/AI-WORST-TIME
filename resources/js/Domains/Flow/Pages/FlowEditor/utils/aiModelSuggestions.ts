@@ -39,7 +39,7 @@ export function registerAiModelCompletions(monaco: Parameters<OnMount>[1], model
 
                         return idCompletionItem(item, {
                             kind: monaco.languages.CompletionItemKind.Value,
-                            detail: `${providerLabel} · ${item.ai_integration.name} · ${item.ai_model_id}`,
+                            detail: `${providerLabel} - ${item.ai_integration.name} - ${item.ai_model_id}`,
                             documentation: `AI integration: ${item.ai_integration.name}\n\nModel: ${item.ai_model_id}\n\nScope: ${item.scope}`,
                             range,
                         });

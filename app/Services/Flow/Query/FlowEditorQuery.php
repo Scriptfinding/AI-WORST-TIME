@@ -93,6 +93,7 @@ final class FlowEditorQuery
                 'icon_color', 'icon_upload_path', 'library_reference', 'updated_at',
             ]),
             'canEdit' => $canEdit,
+            'canManageWorkspaceProxies' => $user->can(Ability::UPDATE->value, $workspace),
             'workspaceProxies' => $workspaceProxies
                 ->get(['id', 'label', 'scheme', 'host', 'port'])
                 ->map(fn ($proxy) => [

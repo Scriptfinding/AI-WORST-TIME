@@ -16,7 +16,7 @@ export default function RunDetailTitle({ run, flowName, flowIcon }: RunDetailTit
     return (
         <S.ModalTitle>
             {flowIcon && <FlowIcon flow={flowIcon} size={20} />}
-            <span>{flowName ? `${flowName} · ` : ''}Run #{run.id}</span>
+            <span>{flowName ? `${flowName} - ` : ''}Run #{run.id}</span>
             {run.legend && (
                 <>
                     <S.TitleSeparator aria-hidden>|</S.TitleSeparator>

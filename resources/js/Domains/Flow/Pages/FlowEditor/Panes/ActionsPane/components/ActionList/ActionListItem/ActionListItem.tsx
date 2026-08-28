@@ -71,8 +71,8 @@ export default function ActionListItem({
                     </ActionItemName>
                     <ActionItemInfo>
                         Webhook
-                        {action.config?.url && <> · {action.config.url}</>}
-                        {action.fire_on_error && ' · Fires on error'}
+                        {action.config?.url && <> - {action.config.url}</>}
+                        {action.fire_on_error && ' - Fires on error'}
                     </ActionItemInfo>
                 </ActionItemMeta>
                 <ActionItemActions onClick={event => event.stopPropagation()}>

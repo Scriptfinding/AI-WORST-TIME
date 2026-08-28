@@ -16,7 +16,7 @@ final class InputResourceReferenceResolver
     private function resolveValue(mixed $value): mixed
     {
         if (is_string($value) && preg_match(
-            '/^\$\{(?:channels|mailboxWatchers|aiModels)\.([a-zA-Z0-9_.-]+)\}$/',
+            '/^\$\{(?:channels|mailboxWatchers|aiModels|dataTables)\.([a-zA-Z0-9_.-]+)\}$/',
             $value,
             $matches,
         )) {

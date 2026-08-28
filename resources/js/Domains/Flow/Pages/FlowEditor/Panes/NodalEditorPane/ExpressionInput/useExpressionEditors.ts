@@ -3,6 +3,7 @@ import type { OnMount } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 import { registerAiModelCompletions } from '@/Domains/Flow/Pages/FlowEditor/utils/aiModelSuggestions';
 import { registerChannelCompletions } from '@/Domains/Flow/Pages/FlowEditor/utils/channelSuggestions';
+import { registerDataTableCompletions } from '@/Domains/Flow/Pages/FlowEditor/utils/dataTableSuggestions';
 import { registerCompletions } from '@/Domains/Flow/Pages/FlowEditor/utils/monacoBase';
 import { registerNodalAutocompleteCompletions } from '@/Domains/Flow/Pages/FlowEditor/utils/inputCompletions';
 import { registerReferenceLabelDecorations } from '@/Domains/Flow/Pages/FlowEditor/utils/referenceLabelDecorations';
@@ -22,6 +23,7 @@ interface UseExpressionEditorsOptions {
     autocompleteOutputData: Record<string, unknown> | null;
     inputType: string;
     isExpressionMode: boolean;
+    flowId?: Id;
     value: ScalarNodeParameterValue;
     onChange: (value: ScalarNodeParameterValue) => void;
 }
@@ -32,6 +34,7 @@ export function useExpressionEditors({
     autocompleteOutputData,
     inputType,
     isExpressionMode,
+    flowId,
     value,
     onChange,
 }: UseExpressionEditorsOptions) {
@@ -58,6 +61,7 @@ export function useExpressionEditors({
             registerCompletions(monaco),
             registerAiModelCompletions(monaco, modelUri),
             registerChannelCompletions(monaco, modelUri),
+            ...(flowId ? [registerDataTableCompletions(monaco, flowId, modelUri)] : []),
             registerVarsCompletions(monaco, modelUri),
             registerNodalAutocompleteCompletions(
                 monaco,
@@ -67,7 +71,7 @@ export function useExpressionEditors({
             registerSnippetCompletions(monaco, modelUri),
             registerTabNameCompletions(monaco, modelUri, autocompleteContext.tabNames),
         ];
-    }, [autocompleteContext, autocompleteOutputData, disposeCompletions]);
+    }, [autocompleteContext, autocompleteOutputData, disposeCompletions, flowId]);
 
     const handleExpressionEditorMount = useCallback((
         currentEditor: editor.IStandaloneCodeEditor,
@@ -76,9 +80,9 @@ export function useExpressionEditors({
         monacoRef.current = monaco;
         completionModelUriRef.current = currentEditor.getModel()?.uri.toString() ?? null;
         registerTemplateDecorations(currentEditor, monaco);
-        registerReferenceLabelDecorations(currentEditor, monaco);
+        registerReferenceLabelDecorations(currentEditor, monaco, { flowId });
         registerExpressionCompletions(monaco, completionModelUriRef.current);
-    }, [registerExpressionCompletions]);
+    }, [flowId, registerExpressionCompletions]);
 
     const syncInlineEditorHeight = useCallback((
         currentEditor: editor.IStandaloneCodeEditor,

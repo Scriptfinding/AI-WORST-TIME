@@ -3,14 +3,16 @@ import { Icon } from '@/Shared/UI/Icon/Icon';
 import * as S from './GrabberOnboarding.styled';
 
 interface GrabberOnboardingProps {
-    storeUrl: string;
+    chromeStoreUrl: string;
+    firefoxStoreUrl: string;
     onClose: () => void;
     onStart: () => void;
     onDismissFuture: () => void;
 }
 
 export default function GrabberOnboarding({
-    storeUrl,
+    chromeStoreUrl,
+    firefoxStoreUrl,
     onClose,
     onStart,
     onDismissFuture,
@@ -42,15 +44,26 @@ export default function GrabberOnboarding({
                     </S.BrandMark>
                     <span>Puppetflow Grabber</span>
                 </S.Brand>
-                <S.StoreBanner
-                    href={storeUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                >
-                    <Icon icon="simple-icons:googlechrome" width={15} height={15} />
-                    <span><small>Chrome extension</small>Get the Grabber</span>
-                    <Icon icon="lucide:arrow-up-right" width={15} height={15} />
-                </S.StoreBanner>
+                <S.StoreBanners>
+                    <S.StoreBanner
+                        href={chromeStoreUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        <Icon icon="logos:chrome" width={17} height={17} />
+                        <span><small>Chrome extension</small>Get the Grabber</span>
+                        <Icon icon="lucide:arrow-up-right" width={15} height={15} />
+                    </S.StoreBanner>
+                    <S.StoreBanner
+                        href={firefoxStoreUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        <Icon icon="logos:firefox" width={17} height={17} />
+                        <span><small>Firefox extension</small>Get the Grabber</span>
+                        <Icon icon="lucide:arrow-up-right" width={15} height={15} />
+                    </S.StoreBanner>
+                </S.StoreBanners>
                 <S.Title id="grabber-onboarding-title">Pick it from the page</S.Title>
                 <S.Intro>
                     Open the page, click what you need, and the selector will land right here.

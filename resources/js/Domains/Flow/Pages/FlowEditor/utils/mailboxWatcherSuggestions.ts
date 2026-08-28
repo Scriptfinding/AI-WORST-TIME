@@ -70,7 +70,7 @@ export function registerMailboxWatcherCompletions(monaco: Parameters<OnMount>[1]
 
             const suggestions = watchers.map(watcher => idCompletionItem(watcher, {
                 kind: monaco.languages.CompletionItemKind.Value,
-                detail: `${watcher.address} · ${watcher.id}`,
+                detail: `${watcher.address} - ${watcher.id}`,
                 documentation: `${watcher.name}\n$waitForEmail("${watcher.id}")`,
                 range,
             }));

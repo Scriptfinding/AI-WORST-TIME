@@ -9,10 +9,12 @@ use App\Models\Flow;
 use App\Models\Workspace;
 use App\Models\WorkspaceProxy;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -21,6 +23,23 @@ class WorkspaceProxyController extends Controller
     public function __construct(
         private readonly ResourceAssignmentValidator $assignments,
     ) {}
+
+    public function test(Request $request): JsonResponse
+    {
+        $workspace = $this->currentWorkspace();
+        Gate::authorize(Ability::UPDATE->value, $workspace);
+
+        return $this->testConnection($request);
+    }
+
+    public function testExisting(Request $request, WorkspaceProxy $workspaceProxy): JsonResponse
+    {
+        $workspace = $this->currentWorkspace();
+        Gate::authorize(Ability::UPDATE->value, $workspace);
+        $this->abortUnlessCurrentWorkspace($workspaceProxy, $workspace);
+
+        return $this->testConnection($request, $workspaceProxy);
+    }
 
     public function store(Request $request): JsonResponse
     {
@@ -148,6 +167,88 @@ class WorkspaceProxyController extends Controller
         }
 
         return response()->json(['message' => 'Proxy deleted.']);
+    }
+
+    private function testConnection(
+        Request $request,
+        ?WorkspaceProxy $workspaceProxy = null,
+    ): JsonResponse
+    {
+        $validated = $request->validate([
+            'scheme' => ['required', Rule::in(['http', 'https', 'socks4', 'socks5'])],
+            'host' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^(?!.*[\\s\\/@])(?:\\[[0-9A-Fa-f:]+\\]|[0-9A-Za-z](?:[0-9A-Za-z.-]*[0-9A-Za-z])?)$/',
+            ],
+            'port' => ['required', 'integer', 'between:1,65535'],
+            'authenticated' => ['required', 'boolean'],
+            'username' => ['nullable', 'string', 'max:1000'],
+            'password' => ['nullable', 'string', 'max:4000'],
+        ]);
+
+        $authenticated = (bool) $validated['authenticated'];
+        $username = $authenticated
+            ? (($validated['username'] ?? '') !== ''
+                ? $validated['username']
+                : $workspaceProxy?->username)
+            : null;
+        $password = $authenticated
+            ? (($validated['password'] ?? '') !== ''
+                ? $validated['password']
+                : $workspaceProxy?->password)
+            : null;
+
+        if ($authenticated && (! is_string($username) || $username === '')) {
+            throw ValidationException::withMessages([
+                'username' => 'A username is required for proxy authentication.',
+            ]);
+        }
+
+        $host = trim($validated['host'], '[]');
+        $formattedHost = str_contains($host, ':') ? "[{$host}]" : $host;
+        $credentials = $authenticated
+            ? rawurlencode($username).':'.rawurlencode(is_string($password) ? $password : '').'@'
+            : '';
+        $proxyUrl = "{$validated['scheme']}://{$credentials}{$formattedHost}:{$validated['port']}";
+        $startedAt = hrtime(true);
+
+        try {
+            $response = Http::acceptJson()
+                ->withOptions(['proxy' => $proxyUrl])
+                ->connectTimeout(5)
+                ->timeout(10)
+                ->get('https://api.ipify.org', ['format' => 'json']);
+        } catch (ConnectionException) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Unable to connect through this proxy.',
+            ]);
+        } catch (\Throwable) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'The proxy connection could not be tested.',
+            ]);
+        }
+
+        if (! $response->successful()) {
+            return response()->json([
+                'ok' => false,
+                'message' => $response->status() === 407
+                    ? 'Proxy authentication failed.'
+                    : "The connection returned HTTP {$response->status()}.",
+            ]);
+        }
+
+        $ip = $response->json('ip');
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Connection successful.',
+            'ip' => is_string($ip) && filter_var($ip, FILTER_VALIDATE_IP) ? $ip : null,
+            'latency_ms' => (int) round((hrtime(true) - $startedAt) / 1_000_000),
+        ]);
     }
 
     /**

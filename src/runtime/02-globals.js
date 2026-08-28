@@ -102,7 +102,7 @@ if (__watchersPath) {
 }
 const __varsJson = process.env.PUPPETFLOW_VARS_ENV || '{}';
 const __runtimeSecretsPath = process.env.RUN_SECRETS_PATH || '';
-const __httpRequestAllowPrivate = String(process.env.PUPPETFLOW_NODE_HTTP_REQUEST_ALLOW_PRIVATE || '').toLowerCase() === 'true';
+const __httpRequestAllowPrivate = String(process.env.RUNNER_HTTP_REQUEST_ALLOW_PRIVATE || '').toLowerCase() === 'true';
 const __runnerOperations = (() => {
   const baseUrl = process.env.RUNNER_API_URL || '';
   const token = process.env.RUNNER_API_TOKEN || '';
@@ -164,6 +164,9 @@ const __runnerOperations = (() => {
   return Object.freeze({
     available: Boolean(baseUrl && token && send),
     aiExecute: (body, timeoutMs) => request('/ai/execute', body, timeoutMs),
+    dataTableRead: body => request('/data-table/read', body, 30000),
+    dataTableWrite: body => request('/data-table/write', body, 30000),
+    dataTableSchema: body => request('/data-table/schema', body, 30000),
     mailboxClaim: body => request('/mailbox/claim', body),
     mailboxRenew: body => request('/mailbox/renew', body),
     waitingDeclare: body => request('/waiting/declare', body),
@@ -181,7 +184,7 @@ delete process.env.RUN_WATCHERS_PATH;
 delete process.env.RUN_SECRETS_PATH;
 delete process.env.RUNNER_API_URL;
 delete process.env.RUNNER_API_TOKEN;
-delete process.env.PUPPETFLOW_NODE_HTTP_REQUEST_ALLOW_PRIVATE;
+delete process.env.RUNNER_HTTP_REQUEST_ALLOW_PRIVATE;
 delete process.env.FLOW_INTERNAL_ID;
 const $_appUrl = process.env.APP_URL || '';
 
@@ -197,6 +200,7 @@ const __installPageRunProgressNoops = () => {
   window.__nopRunLine = window.__nopRunLine || (() => {});
   window.__nopRunNodeStart = window.__nopRunNodeStart || (() => {});
   window.__nopRunNodeEnd = window.__nopRunNodeEnd || (() => {});
+  window.__nopRunEdge = window.__nopRunEdge || (() => {});
 };
 await __registerNamedPageInitializer(async page => {
   const client = await page.target().createCDPSession();

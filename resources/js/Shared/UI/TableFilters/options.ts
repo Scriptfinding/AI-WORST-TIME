@@ -51,3 +51,16 @@ export function getScopeIcon(scope: string | null): string {
     if (scope === 'user') return 'lucide:user';
     return 'lucide:layers';
 }
+
+export function matchesOwnershipScope(
+    item: { visibility: 'owner' | 'workspace' | 'team'; team_id: Id | null },
+    scope: string | null,
+): boolean {
+    if (!scope) return true;
+    if (scope === 'user') return item.visibility === 'owner';
+    if (scope === 'workspace') return item.visibility === 'workspace';
+    if (scope.startsWith('team:')) {
+        return item.visibility === 'team' && String(item.team_id) === scope.slice(5);
+    }
+    return true;
+}

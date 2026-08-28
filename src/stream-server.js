@@ -963,7 +963,7 @@ async function handleClientConnection(ws, runId, capability) {
     }
 
     console.log(`[stream] Client joined run ${runId} (${session.clients.size} local clients)`);
-    publishControl(runId, { type: 'requestFrame' }, true).then((published) => {
+    publishControl(runId, { type: 'requestFrame' }, true, false).then((published) => {
         if (!published && ws.readyState === WebSocket.OPEN) {
             ws.close(1013, 'Control relay saturated');
         }
@@ -1200,8 +1200,13 @@ function publishStatus(runId, session, status) {
     );
 }
 
-function publishControl(runId, message, critical = false) {
-    return publish(controlChannel(runId), encodeJsonEnvelope('c', message), critical, true);
+function publishControl(runId, message, critical = false, requireSubscriber = true) {
+    return publish(
+        controlChannel(runId),
+        encodeJsonEnvelope('c', message),
+        critical,
+        requireSubscriber,
+    );
 }
 
 function clearProducerPing(session) {

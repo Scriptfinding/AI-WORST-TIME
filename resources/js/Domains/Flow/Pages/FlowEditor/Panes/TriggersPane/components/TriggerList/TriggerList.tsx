@@ -111,7 +111,7 @@ export default function TriggerList({
                                 <SharedTriggerInfo key={trigger.id}>
                                     <Icon icon={trigger.type === 'webhook' ? 'lucide:webhook' : 'lucide:clock'} width={12} />
                                     {trigger.user?.name} - {trigger.label}
-                                    {scopeLabel && <SharedScope> · {scopeLabel}</SharedScope>}
+                                    {scopeLabel && <SharedScope> - {scopeLabel}</SharedScope>}
                                 </SharedTriggerInfo>
                             );
                         })}

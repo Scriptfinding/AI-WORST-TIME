@@ -92,24 +92,32 @@ export function useFlowRunActions({
     openRunModalRef.current = openRunModal;
 
     const handleRunFromModal = useCallback((parsedInput: Record<string, unknown>, useOldCode: boolean) => {
+        let codeOverride: string;
+        try {
+            codeOverride = useOldCode && rerunCodeSnapshot
+                ? rerunCodeSnapshot
+                : isNodalFlow
+                    ? compileNodalGraphToCode(nodalGraphRef.current, { instrumentRunProgress: true })
+                    : code;
+        } catch (error) {
+            toast(error instanceof Error ? error.message : 'The visual flow cannot be compiled.', 'error');
+            return;
+        }
+
         setShowRunModal(false);
         setRunning(true);
         pendingRunOpenRef.current = true;
-        const payload: Record<string, FormDataConvertible> = { input: parsedInput as FormDataConvertible };
-        if (useOldCode && rerunCodeSnapshot) {
-            payload.code_override = rerunCodeSnapshot;
-        } else {
-            payload.code_override = isNodalFlow
-                ? compileNodalGraphToCode(nodalGraphRef.current, { instrumentRunProgress: true })
-                : code;
-        }
+        const payload: Record<string, FormDataConvertible> = {
+            input: parsedInput as FormDataConvertible,
+            code_override: codeOverride,
+        };
         if (rerunData) {
             payload.is_rerun = true;
         }
         router.post(`/flows/${flowId}/run`, payload, {
             onFinish: () => setRunning(false),
         });
-    }, [code, flowId, isNodalFlow, nodalGraphRef, pendingRunOpenRef, rerunCodeSnapshot, rerunData, setRunning]);
+    }, [code, flowId, isNodalFlow, nodalGraphRef, pendingRunOpenRef, rerunCodeSnapshot, rerunData, setRunning, toast]);
 
     const handleSaveInput = useCallback((parsedInput: Record<string, unknown>) => {
         const isEmpty = Object.keys(parsedInput).length === 0;

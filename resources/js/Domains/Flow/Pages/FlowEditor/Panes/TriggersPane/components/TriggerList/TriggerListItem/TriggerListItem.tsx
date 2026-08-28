@@ -75,7 +75,7 @@ export default function TriggerListItem({
                         {trigger.type === 'webhook' ? 'Webhook' : 'Cron'}
                         {trigger.type === 'webhook' && trigger.endpoint_url && (
                             <>
-                                {' · '}
+                                {' - '}
                                 <span
                                     onClick={event => {
                                         event.stopPropagation();
@@ -88,7 +88,7 @@ export default function TriggerListItem({
                             </>
                         )}
                         {trigger.type === 'cron' && trigger.config && (
-                            <> · {(trigger.config as { cron_expression?: string }).cron_expression}</>
+                            <> - {(trigger.config as { cron_expression?: string }).cron_expression}</>
                         )}
                     </TriggerItemInfo>
                 </TriggerItemMeta>

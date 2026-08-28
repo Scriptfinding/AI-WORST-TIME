@@ -88,6 +88,15 @@ const PAGE_ONBOARDING: PageOnboardingCopy[] = [
         matches: exact('/snippets'),
     },
     {
+        key: 'data-tables',
+        version: 1,
+        title: 'Structure data for your automations',
+        description: 'Data Tables give your workspace a direct place to store and edit structured records.',
+        highlights: ['Control table visibility and ownership', 'Define typed columns for consistent values', 'Edit rows directly in a spreadsheet-style grid'],
+        nextStep: 'Create a data table, then add your first columns and rows.',
+        matches: exact('/data-tables'),
+    },
+    {
         key: 'integrations',
         version: 1,
         title: 'Connect external services',
@@ -163,6 +172,7 @@ const MARKETING_LINES: Record<string, string> = {
     channels: 'Deliver the right automation update to the right conversation instantly.',
     mailboxes: 'Turn every incoming email into a trigger your automations can act on.',
     snippets: 'Write useful logic once, then reuse it everywhere.',
+    'data-tables': 'Give every automation a reliable place to read and write structured data.',
     integrations: 'Connect the services your automations need to do real work.',
     'workspace.settings': 'Shape a workspace that works exactly the way your team does.',
     'workspace.members': 'Bring the right people together with the right level of access.',
@@ -215,6 +225,12 @@ const PRESENTATIONS: Record<string, OnboardingPresentation> = {
         mediaIcons: ['lucide:copy', 'lucide:library'],
         layout: 'poster',
         accent: 'violet',
+    },
+    'data-tables': {
+        icon: 'lucide:database',
+        mediaIcons: ['lucide:table', 'lucide:panel-top'],
+        layout: 'cards',
+        accent: 'lime',
     },
     integrations: {
         icon: 'lucide:plug-zap',

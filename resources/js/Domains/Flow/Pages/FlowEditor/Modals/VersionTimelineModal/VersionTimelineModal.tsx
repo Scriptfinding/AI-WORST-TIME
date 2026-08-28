@@ -267,7 +267,7 @@ export default function VersionTimelineModal({
                     </S.Title>
                 )}
                 caption={selectedMetadata
-                    ? `${flow.name} · Version ${selectedMetadata.version}`
+                    ? `${flow.name} - Version ${selectedMetadata.version}`
                     : flow.name}
             >
                 <S.Layout>
@@ -335,7 +335,7 @@ export default function VersionTimelineModal({
                                             </S.VersionHeading>
                                             <S.VersionMeta>
                                                 {formatPublishedAt(version.published_at)}
-                                                {' · '}
+                                                {' - '}
                                                 {version.publisher?.name ?? 'System'}
                                             </S.VersionMeta>
                                         </S.VersionBody>

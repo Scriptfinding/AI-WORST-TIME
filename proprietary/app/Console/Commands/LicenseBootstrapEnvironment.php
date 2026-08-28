@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Cache;
 
 class LicenseBootstrapEnvironment extends Command
 {
-    private const ENVIRONMENT_VARIABLE = 'PUPPETFLOW_LICENSE_MANAGED';
+    private const ENVIRONMENT_VARIABLE = 'LICENSE_MANAGED';
 
     protected $signature = 'license:bootstrap-env';
 

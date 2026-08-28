@@ -62,9 +62,9 @@ export default function WatcherItem({
                     </S.WatcherItemName>
                     <S.WatcherItemInfo>
                         {mailboxAddress}
-                        {' · '}{watcher.rules.length} rule{watcher.rules.length !== 1 ? 's' : ''}
-                        {watcher.extract_enabled && ' · Parsing'}
-                        {watcher.timeout != null && ` · ${watcher.timeout / 1000}s`}
+                        {' - '}{watcher.rules.length} rule{watcher.rules.length !== 1 ? 's' : ''}
+                        {watcher.extract_enabled && ' - Parsing'}
+                        {watcher.timeout != null && ` - ${watcher.timeout / 1000}s`}
                     </S.WatcherItemInfo>
                 </S.WatcherItemMeta>
                 {canManage && <S.WatcherItemActions onClick={event => event.stopPropagation()}>

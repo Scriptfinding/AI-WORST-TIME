@@ -97,7 +97,7 @@ export default function LatestRunCard({ flowId, run, onViewDetails, onKill }: La
                             <S.RunItemTrigger>
                                 <Icon icon="lucide:user" width={10} height={10} />
                                 {run.triggered_by_user
-                                    ? `${run.trigger_type === 'api' ? 'Api · ' : ''}by ${ucfirst(run.triggered_by_user.name)}`
+                                    ? `${run.trigger_type === 'api' ? 'API run ' : ''}by ${ucfirst(run.triggered_by_user.name)}`
                                     : ucfirst(run.trigger_type)}
                             </S.RunItemTrigger>
                         </S.RunItemInfo>

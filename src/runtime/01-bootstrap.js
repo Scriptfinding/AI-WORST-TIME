@@ -67,6 +67,9 @@ const __nopRunNodeEnd = (nodeId) => {
   if (stackIndex !== -1) __nopCurrentNodeStack.splice(stackIndex, 1);
   __emitRunProgress({ kind: 'node', nodeId, phase: 'end' });
 };
+const __nopRunEdge = (edgeId) => {
+  __emitRunProgress({ kind: 'edge', edgeId });
+};
 const __formatActionValue = (value) => {
   if (typeof value === 'string') return value;
   if (value instanceof Error) return value.stack || value.message;

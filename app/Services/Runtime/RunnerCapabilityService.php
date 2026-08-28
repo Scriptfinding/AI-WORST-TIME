@@ -21,6 +21,12 @@ class RunnerCapabilityService
 
     public const SCOPE_AI_EXECUTE = 'ai.execute';
 
+    public const SCOPE_DATA_TABLE_READ = 'data-table.read';
+
+    public const SCOPE_DATA_TABLE_WRITE = 'data-table.write';
+
+    public const SCOPE_DATA_TABLE_SCHEMA = 'data-table.schema';
+
     public const SCOPE_WAITING_DECLARE = 'waiting.declare';
 
     public const SCOPE_WAITING_CONSUME = 'waiting.consume';

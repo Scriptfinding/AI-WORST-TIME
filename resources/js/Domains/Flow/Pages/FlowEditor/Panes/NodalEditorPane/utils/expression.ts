@@ -43,9 +43,9 @@ export const normalizeParameterValue = (value: RawNodeParameterValue | unknown):
             combinator: value.combinator === 'or' ? 'or' : 'and',
             rules: rules.length > 0 ? rules : [{
                 id: 'condition-1',
-                category: 'string',
-                operator: 'exists',
-                left: { mode: 'expression', value: '{{ $input.value }}' },
+                category: 'boolean',
+                operator: 'isTrue',
+                left: { mode: 'expression', value: '{{ true }}' },
                 right: { mode: 'fixed', value: '' },
             }],
         };
@@ -137,7 +137,12 @@ const formatFixedLiteral = (
 ) => {
     const trimmed = value?.trim();
     if (!trimmed) return 'undefined';
-    if (valueType === 'string' || valueType === 'channel' || valueType === 'mailbox-watcher') {
+    if (
+        valueType === 'string'
+        || valueType === 'channel'
+        || valueType === 'mailbox-watcher'
+        || valueType === 'data-table'
+    ) {
         return JSON.stringify(value);
     }
     if (valueType === 'number') return /^-?\d+(\.\d+)?$/.test(trimmed) ? trimmed : 'undefined';
@@ -153,6 +158,36 @@ const formatFixedLiteral = (
         if (isParsableExpression(parseTarget)) return trimmed;
     }
     return JSON.stringify(trimmed);
+};
+
+const formatDataTableFiltersForCompiler = (value: string, awaitExpressions: boolean): string => {
+    let filters: unknown;
+    try {
+        filters = JSON.parse(value || '[]');
+    } catch {
+        return '[]';
+    }
+    if (!Array.isArray(filters)) return '[]';
+
+    const source = filters
+        .filter((filter): filter is Record<string, unknown> => Boolean(filter && typeof filter === 'object' && !Array.isArray(filter)))
+        .map(filter => {
+            const fields = [
+                `keyName: ${JSON.stringify(String(filter.keyName ?? ''))}`,
+                `condition: ${JSON.stringify(String(filter.condition ?? 'eq'))}`,
+            ];
+            if (Object.prototype.hasOwnProperty.call(filter, 'keyValue')) {
+                const keyValue = filter.keyValueMode === 'expression'
+                    ? `$renderExpression(${JSON.stringify(String(filter.keyValue ?? ''))})`
+                    : JSON.stringify(filter.keyValue);
+                fields.push(`keyValue: ${filter.keyValueMode === 'expression' && awaitExpressions ? `await ${keyValue}` : keyValue}`);
+            }
+
+            return `{ ${fields.join(', ')} }`;
+        })
+        .join(', ');
+
+    return `[${source}]`;
 };
 
 const createPreviewDateTime = (value: Date | string | number = new Date()) => {
@@ -339,6 +374,9 @@ export const formatParameterForCompiler = (
 ): string => {
     const normalized = normalizeParameterValue(value);
     if (normalized.mode === 'if-condition') return 'undefined';
+    if (normalized.mode === 'fixed' && options.valueType === 'data-table-filters') {
+        return formatDataTableFiltersForCompiler(normalized.value, options.awaitExpressions === true);
+    }
 
     if (normalized.mode === 'object') {
         if (normalized.inputMode === 'json') {

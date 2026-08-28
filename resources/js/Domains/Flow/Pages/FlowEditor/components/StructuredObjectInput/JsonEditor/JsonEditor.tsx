@@ -43,7 +43,7 @@ export default function JsonEditor({
         const disposables = [
             registerJsonReferenceNamespaceCompletions(
                 monaco,
-                flowId ? ['vars', 'channels', 'mailboxWatchers', 'aiModels'] : ['vars'],
+                flowId ? ['vars', 'channels', 'mailboxWatchers', 'aiModels', 'dataTables'] : ['vars'],
             ),
             registerJsonVariableCompletions(monaco),
             ...(flowId ? [registerJsonResourceReferenceCompletions(monaco, flowId)] : []),

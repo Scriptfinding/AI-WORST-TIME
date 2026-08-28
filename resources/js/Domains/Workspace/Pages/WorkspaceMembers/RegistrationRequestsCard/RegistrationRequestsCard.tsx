@@ -53,7 +53,7 @@ export default function RegistrationRequestsCard({ requests }: Props) {
                 isOpen={selected !== null}
                 onClose={() => setSelected(null)}
                 title="Approve invitation request"
-                caption={selected ? `${selected.name} · ${selected.email}` : undefined}
+                caption={selected ? `${selected.name} - ${selected.email}` : undefined}
                 footer={
                     <>
                         <Button variant="secondary" onClick={() => setSelected(null)}>Cancel</Button>

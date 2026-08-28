@@ -79,7 +79,7 @@ final class PuppeteerEnvironmentBuilder
             'FLOW_OWNER_ID' => (string) $flow->owner_id,
             'RUNNER_LOG_DEPTH' => (string) min(20, max(0, $workspace->debug_log_object_depth)),
             'RUNNER_LOG_ARRAY_LIMIT' => (string) min(1000, max(1, $workspace->debug_log_array_limit)),
-            'PUPPETFLOW_NODE_HTTP_REQUEST_ALLOW_PRIVATE' => config('puppetflow.node_http_request_allow_private', false) ? 'true' : 'false',
+            'RUNNER_HTTP_REQUEST_ALLOW_PRIVATE' => config('puppetflow.runner_http_request_allow_private', false) ? 'true' : 'false',
             'APP_URL' => $this->stringConfig('app.url'),
             ...$this->pinokioConfig->toEnv(),
         ];
@@ -179,6 +179,9 @@ final class PuppeteerEnvironmentBuilder
                 RunnerCapabilityService::SCOPE_MAILBOX_CLAIM,
                 RunnerCapabilityService::SCOPE_MAILBOX_RENEW,
                 RunnerCapabilityService::SCOPE_AI_EXECUTE,
+                RunnerCapabilityService::SCOPE_DATA_TABLE_READ,
+                RunnerCapabilityService::SCOPE_DATA_TABLE_WRITE,
+                RunnerCapabilityService::SCOPE_DATA_TABLE_SCHEMA,
                 RunnerCapabilityService::SCOPE_WAITING_DECLARE,
                 RunnerCapabilityService::SCOPE_WAITING_CONSUME,
                 RunnerCapabilityService::SCOPE_WAITING_CLEAR,

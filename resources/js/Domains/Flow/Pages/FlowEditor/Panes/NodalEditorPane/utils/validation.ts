@@ -1,4 +1,5 @@
 import type { HelpEntryDef } from '@/Domains/Flow/Pages/FlowEditor/types';
+import type { DataTableColumnType } from '@/Domains/DataTable/types';
 import type { NodeParameterValue } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/types';
 import { getParameterMeta, getSignatureArgs } from './catalog';
 import { getLoopParameterKeysForMode, LOOP_NODE_NAME } from './constants';
@@ -7,7 +8,26 @@ import { normalizeHttpUrl } from './site';
 import { getFunctionArgumentNames } from './functionArguments';
 import { getNodeFlowPortDefinitions, isCallbackFlowPort } from './flowParameters';
 
+export interface DataTableNodeResource {
+    id: Id;
+    name: string;
+    description?: string | null;
+    visibility?: string;
+    owner?: { id: Id; name: string } | null;
+    team?: { id: Id; name: string } | null;
+    can_manage: boolean;
+    columns: Array<{
+        id: Id;
+        name: string;
+        type: DataTableColumnType;
+    }>;
+}
+
 export interface NodeValidationResources {
+    dataTables?: {
+        status: 'loading' | 'loaded' | 'error';
+        items: DataTableNodeResource[];
+    };
     aiSetup?: {
         status: 'loading' | 'loaded' | 'error';
         hasAiIntegration: boolean;
@@ -70,6 +90,14 @@ const RUNTIME_IDENTIFIERS = new Set([
     '$page', '$input', '$nodes', '$run', '$output', '$context', '$json',
     '$vars', '$userOutput', '$renderExpression', '$keyboardSpeed',
     '$viewportWidth', '$viewportHeight',
+]);
+const DATA_TABLE_MUTATION_NODE_NAMES = new Set([
+    '$dataTableInsertRow',
+    '$dataTableUpdateRows',
+    '$dataTableUpsertRows',
+    '$dataTableDeleteRows',
+    '$dataTableDelete',
+    '$dataTableUpdate',
 ]);
 
 const isValidIdentifier = (value: string) => (
@@ -139,6 +167,25 @@ function isEmptyParameterValue(value: NodeParameterValue | undefined): boolean {
     }
 
     return normalized.value.trim() === '';
+}
+
+function objectBooleanValue(value: NodeParameterValue | undefined, key: string): boolean | null {
+    const normalized = normalizeParameterValue(value);
+    if (normalized.mode !== 'object') return null;
+    if (normalized.inputMode === 'json') {
+        if (normalized.jsonMode === 'expression') return null;
+        try {
+            const parsed: unknown = JSON.parse(normalized.value || '{}');
+            if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return false;
+
+            return (parsed as Record<string, unknown>)[key] === true;
+        } catch {
+            return false;
+        }
+    }
+    const field = normalized.fields.find(candidate => candidate.key === key);
+
+    return field ? normalizeScalarParameterValue(field.value).value === 'true' : false;
 }
 
 /**
@@ -332,6 +379,16 @@ function getUnavailableFixedValueIssue(
         return [...resources.mailboxWatchers.names].some(id => String(id) === value) ? [] : unavailable();
     }
 
+    if (inputType === 'data-table' && resources?.dataTables?.status === 'loaded') {
+        const table = resources.dataTables.items.find(item => String(item.id) === value);
+        if (!table) return unavailable();
+        if (DATA_TABLE_MUTATION_NODE_NAMES.has(entry.name) && !table.can_manage) {
+            return unavailable(`${label} is read only for this flow actor.`);
+        }
+
+        return [];
+    }
+
     if (
         (inputType === 'ai-model' || inputType === 'ai-vision-model')
         && resources?.aiModels?.status === 'loaded'
@@ -468,6 +525,40 @@ export function getMissingRequiredParameters(
                 label: 'Arguments',
                 message: 'Use unique, non-reserved JavaScript identifiers.',
             });
+        }
+    }
+
+    if (entry.category === 'Data Tables') {
+        const filters = normalizeScalarParameterValue(values.filters);
+        const requiresFilters = [
+            '$dataTableUpsertRows',
+            '$dataTableRowExists',
+            '$dataTableRowDoesNotExist',
+            '$dataTableDeleteRows',
+        ].includes(entry.name);
+        let parsedFilters: unknown = null;
+        if (filters.mode === 'fixed') {
+            try {
+                parsedFilters = JSON.parse(filters.value || '[]');
+            } catch {
+                parsedFilters = null;
+            }
+        }
+        if (requiresFilters && filters.mode === 'fixed' && (!Array.isArray(parsedFilters) || parsedFilters.length === 0)) {
+            issues.push({
+                path: 'filters',
+                label: 'Filters',
+                message: 'Add at least one filter. Use Expression mode when filters are computed at runtime.',
+            });
+        }
+        if (entry.name === '$dataTableUpdateRows' && filters.mode === 'fixed' && Array.isArray(parsedFilters) && parsedFilters.length === 0) {
+            if (objectBooleanValue(values.options, 'updateAll') === false) {
+                issues.push({
+                    path: 'filters',
+                    label: 'Filters',
+                    message: 'Add a filter or explicitly enable Update All in options.',
+                });
+            }
         }
     }
 

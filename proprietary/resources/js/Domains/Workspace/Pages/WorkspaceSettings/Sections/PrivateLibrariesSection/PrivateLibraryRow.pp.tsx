@@ -9,11 +9,19 @@ interface Props {
     library: PrivateLibrary;
     busy: boolean;
     readOnly: boolean;
+    onEdit: (library: PrivateLibrary) => void;
     onRefresh: (library: PrivateLibrary) => void;
     onDelete: (library: PrivateLibrary) => void;
 }
 
-export default function PrivateLibraryRow({ library, busy, readOnly, onRefresh, onDelete }: Props) {
+export default function PrivateLibraryRow({
+    library,
+    busy,
+    readOnly,
+    onEdit,
+    onRefresh,
+    onDelete,
+}: Props) {
     return (
         <S.Row>
             <td>
@@ -64,6 +72,7 @@ export default function PrivateLibraryRow({ library, busy, readOnly, onRefresh, 
                         <PrivateLibraryActionMenu
                             library={library}
                             busy={busy}
+                            onEdit={onEdit}
                             onRefresh={onRefresh}
                             onDelete={onDelete}
                         />

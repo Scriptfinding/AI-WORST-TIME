@@ -35,6 +35,8 @@ export interface NodalEditorPaneProps {
         activeNodeId: string | null;
         passedNodeIds: Set<string>;
         nodePassCounts: Map<string, number>;
+        passedEdgeIds: Set<string>;
+        edgePassCounts: Map<string, number>;
         errorNodeId?: string | null;
         activeLine?: number | null;
         passedLines?: Set<number> | number[];

@@ -214,7 +214,7 @@ export default function MailboxesPane({
                     items={selectedWatchers.map(watcher => ({
                         id: watcher.id,
                         title: watcher.name,
-                        subtitle: `${getMailboxAddress(watcher.mailbox_id)} · ${watcher.rules.length} rule${watcher.rules.length === 1 ? '' : 's'}`,
+                        subtitle: `${getMailboxAddress(watcher.mailbox_id)} - ${watcher.rules.length} rule${watcher.rules.length === 1 ? '' : 's'}`,
                         icon: <Icon icon="lucide:mail-search" width={22} height={22} />,
                     }))}
                 />

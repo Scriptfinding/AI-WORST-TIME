@@ -59,6 +59,8 @@ export default function CodePane({ run, flow, visualGraph, resolvedTheme, consol
                                 ? visualProgress.passedNodeIds
                                 : new Set([...visualProgress.passedNodeIds, visualProgress.activeNodeId]),
                             nodePassCounts: visualProgress.nodePassCounts,
+                            passedEdgeIds: visualProgress.passedEdgeIds,
+                            edgePassCounts: visualProgress.edgePassCounts,
                             errorNodeId: isErrorRun ? visualProgress.activeNodeId : null,
                             activeLine,
                             passedLines,
@@ -71,6 +73,7 @@ export default function CodePane({ run, flow, visualGraph, resolvedTheme, consol
                 <Loader><Icon icon="lucide:loader-2" width={18} height={18} /></Loader>
             ) : run.code_snapshot ? (
                 <CodeSnapshotEditor
+                    runId={run.id}
                     code={run.code_snapshot}
                     resolvedTheme={resolvedTheme}
                     activeLine={activeLine}

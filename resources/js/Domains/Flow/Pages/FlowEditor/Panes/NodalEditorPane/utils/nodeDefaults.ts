@@ -43,9 +43,9 @@ export const getInitialNodeValues = (entry: HelpEntryDef): Record<string, NodePa
                 combinator: 'and' as const,
                 rules: [{
                     id: 'condition-1',
-                    category: 'string' as const,
-                    operator: 'exists',
-                    left: { mode: 'expression' as const, value: '{{ $input.value }}' },
+                    category: 'boolean' as const,
+                    operator: 'isTrue',
+                    left: { mode: 'expression' as const, value: '{{ true }}' },
                     right: { mode: 'fixed' as const, value: '' },
                 }],
             },
@@ -65,6 +65,12 @@ export const getInitialNodeValues = (entry: HelpEntryDef): Record<string, NodePa
     if (entry.name === '$gotoUrl' || entry.name === '$gotoTab') {
         return {
             tabName: { mode: 'fixed' as const, value: 'Default' },
+        };
+    }
+
+    if (entry.name === '$sleep') {
+        return {
+            milliseconds: { mode: 'fixed' as const, value: '1000' },
         };
     }
 
@@ -112,6 +118,27 @@ export const getInitialNodeValues = (entry: HelpEntryDef): Record<string, NodePa
                 }],
             },
         };
+    }
+
+    if (entry.category === 'Data Tables') {
+        return Object.fromEntries(getSignatureArgs(entry.signature).map(arg => {
+            const key = arg.replace(/\?$/, '').replace(/^\.\.\./, '');
+            const valueType = getParameterMeta(entry, key).valueType;
+            if (valueType === 'data-table-values' || valueType === 'object') {
+                return [key, {
+                    mode: 'object' as const,
+                    inputMode: 'form' as const,
+                    jsonMode: 'fixed' as const,
+                    value: '{}',
+                    fields: [],
+                }];
+            }
+            if (valueType === 'data-table-filters' || valueType === 'data-table-columns') {
+                return [key, { mode: 'fixed' as const, value: '[]' }];
+            }
+
+            return [key, { mode: 'fixed' as const, value: '' }];
+        }));
     }
 
     if (entry.category === 'Snippets' || entry.localFunctionId) {

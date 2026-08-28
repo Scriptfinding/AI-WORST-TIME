@@ -48,7 +48,7 @@ export default function AiModelSelect({
                 return {
                     value: String(model.id),
                     label: model.name,
-                    detail: visibility ? `${visibility.label} · ${model.ai_model_id}` : model.ai_model_id,
+                    detail: visibility ? `${visibility.label} - ${model.ai_model_id}` : model.ai_model_id,
                     detailIcon: visibility?.icon,
                     icon: provider?.icon,
                     iconColor: provider?.color,

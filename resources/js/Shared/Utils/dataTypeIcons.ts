@@ -11,6 +11,7 @@ export const DATA_TYPE_ICONS = {
     channel: 'lucide:bell',
     'mailbox-watcher': 'lucide:mail-search',
     'ai-model': 'lucide:sparkles',
+    datatable: 'lucide:table',
     secret: 'lucide:key-round',
     otp: 'lucide:shield-keyhole',
     vault: 'lucide:vault',

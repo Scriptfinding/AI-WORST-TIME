@@ -1,6 +1,7 @@
 import type {
     HelpEntryAvailability,
     HelpEntryDef,
+    NodalFlowPortDef,
     NodalParamDef,
     SiteUrlContextDef,
 } from '@/Domains/Flow/Pages/FlowEditor/types';
@@ -31,6 +32,7 @@ export function parseHelpEntries(raw: string): HelpEntryDef[] {
         const opt = body.match(/@opt\s+(.+)/)?.[1]?.trim();
         const evalExpr = body.match(/@eval\s+(.+)/)?.[1]?.trim();
         const siteUrlContexts = parseSiteUrlContexts(body);
+        const nodalFlowPorts = parseNodalFlowPorts(body);
         const nodalParams = addOptionDefaultValues(parseNodalParams(body), opt);
         const name = sig.replace(/\(.*$/, '');
         if (name) {
@@ -46,11 +48,23 @@ export function parseHelpEntries(raw: string): HelpEntryDef[] {
                 options: opt,
                 evalExpr,
                 ...(Object.keys(nodalParams).length > 0 ? { nodalParams } : {}),
+                ...(nodalFlowPorts.length > 0 ? { nodalFlowPorts } : {}),
                 ...(siteUrlContexts.length > 0 ? { siteUrlContexts } : {}),
             });
         }
     }
     return entries;
+}
+
+function parseNodalFlowPorts(body: string): NodalFlowPortDef[] {
+    return Array.from(
+        body.matchAll(/@nodal-flow-port\s+([a-zA-Z_$][\w$-]*)\s+\[(continuation|branch|callback)\]\s*:\s*([^\n]+)/g),
+        match => ({
+            id: match[1],
+            kind: match[2] as NodalFlowPortDef['kind'],
+            label: match[3].trim(),
+        }),
+    );
 }
 
 function toFriendlyLabel(value: string): string {
@@ -138,6 +152,14 @@ const PARAM_SELECT_CHOICES: Record<string, { value: string; label: string }[]> =
         { value: 'text', label: 'Text' },
         // { value: 'file', label: 'File' },
     ],
+    matchType: [
+        { value: 'allConditions', label: 'All conditions (AND)' },
+        { value: 'anyCondition', label: 'Any condition (OR)' },
+    ],
+    direction: [
+        { value: 'asc', label: 'Ascending' },
+        { value: 'desc', label: 'Descending' },
+    ],
     responseStatus: [
         { value: 'success', label: 'success' },
         { value: 'error', label: 'error' },
@@ -203,6 +225,10 @@ function parseNodalParams(body: string): Record<string, NodalParamDef> {
                                         || valueType === 'mailbox-watcher'
                                         || valueType === 'ai-model'
                                         || valueType === 'ai-vision-model'
+                                        || valueType === 'data-table'
+                                        || valueType === 'data-table-values'
+                                        || valueType === 'data-table-filters'
+                                        || valueType === 'data-table-columns'
                                         ? valueType
                                         : undefined;
         const [paramName, ...fieldPath] = path.split('.');
@@ -403,7 +429,7 @@ function normalizeNodalParamType(type: string | undefined): NodalParamDef['value
 
     const normalized = type.toLowerCase();
     if (['int', 'integer', 'float', 'double'].includes(normalized)) return 'number';
-    if (['string', 'number', 'boolean', 'array', 'object', 'custom-object', 'getter-map', 'function-map', 'function', 'code', 'flow', 'channel', 'mailbox-watcher', 'ai-model', 'ai-vision-model'].includes(normalized)) {
+    if (['string', 'number', 'boolean', 'array', 'object', 'custom-object', 'getter-map', 'function-map', 'function', 'code', 'flow', 'channel', 'mailbox-watcher', 'ai-model', 'ai-vision-model', 'data-table', 'data-table-values', 'data-table-filters', 'data-table-columns'].includes(normalized)) {
         return normalized as NodalParamDef['valueType'];
     }
 
@@ -454,11 +480,14 @@ function toTypeScriptType(meta?: NodalParamDef): string {
         || meta.valueType === 'mailbox-watcher'
         || meta.valueType === 'ai-model'
         || meta.valueType === 'ai-vision-model'
+        || meta.valueType === 'data-table'
     ) return 'string';
     if (meta.valueType === 'function') return 'Function';
     if (meta.valueType === 'code') return 'any';
     if (meta.valueType === 'flow') return '() => Promise<void>';
-    if (meta.valueType === 'object' || meta.valueType === 'custom-object') return 'Record<string, any>';
+    if (meta.valueType === 'object' || meta.valueType === 'custom-object' || meta.valueType === 'data-table-values') return 'Record<string, any>';
+    if (meta.valueType === 'data-table-filters') return 'DataTableFilter[]';
+    if (meta.valueType === 'data-table-columns') return 'DataTableColumnDefinition[]';
 
     return 'any';
 }
@@ -470,6 +499,20 @@ function getNodalParamDoc(meta: NodalParamDef): string {
     ].filter(Boolean);
 
     return details.length > 0 ? `/** ${details.join(' ')} */ ` : '';
+}
+
+function getParameterHelp(meta: NodalParamDef | undefined): string {
+    if (!meta) return '';
+
+    const shape = meta.valueType === 'data-table-filters'
+        ? 'Each item is { keyName, condition, keyValue? }. Conditions: eq, neq, gt, gte, lt, lte, like, ilike, isEmpty, isNotEmpty, isTrue, isFalse.'
+        : meta.valueType === 'data-table-columns'
+            ? 'Each item is { name, type }, where type is string, number, boolean, or datetime.'
+            : meta.valueType === 'data-table-values'
+                ? 'Object keyed by Data Table column name.'
+                : '';
+
+    return [meta.description, shape].filter(Boolean).join(' ');
 }
 
 function getParameterDeclaration(entry: HelpEntryDef, arg: string): string {
@@ -546,6 +589,16 @@ declare const Interval: any;
 function generateExtraLibDeclarations(entries: HelpEntryDef[]): string {
     const lines: string[] = [
         DATE_TIME_DECLARATIONS,
+        `type DataTableFilterCondition = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'isEmpty' | 'isNotEmpty' | 'isTrue' | 'isFalse';
+type DataTableFilter = {
+    keyName: string;
+    condition: DataTableFilterCondition;
+    keyValue?: unknown;
+};
+type DataTableColumnDefinition = {
+    name: string;
+    type: 'string' | 'number' | 'boolean' | 'datetime';
+};`,
         'declare const $input: any;',
         'declare const $output: any;',
         'declare const $nodes: any;',
@@ -554,7 +607,22 @@ function generateExtraLibDeclarations(entries: HelpEntryDef[]): string {
     ];
     for (const entry of entries) {
         const { name, signature, desc, options, category } = entry;
-        lines.push(`/** ${desc}${options ? ' Options: ' + options : ''} */`);
+        const argsMatch = signature.match(/\(([^)]*)\)/);
+        const args = argsMatch ? argsMatch[1] : '';
+        const parameterDocs = args
+            .split(',')
+            .map(arg => arg.trim().replace(/\?$/, '').replace(/^\.\.\./, ''))
+            .filter(Boolean)
+            .flatMap(paramName => {
+                const help = getParameterHelp(entry.nodalParams?.[paramName]);
+                return help ? [` * @param ${paramName} ${help}`] : [];
+            });
+        lines.push([
+            '/**',
+            ` * ${desc}${options ? ' Options: ' + options : ''}`,
+            ...parameterDocs,
+            ' */',
+        ].join('\n'));
         if (category === 'Globals') {
             if (name === '$input' || name === '$json' || name === '$output' || name === '$run' || name === '$context') continue;
             if (name === '$page') {
@@ -575,8 +643,6 @@ function generateExtraLibDeclarations(entries: HelpEntryDef[]): string {
                 lines.push('declare const $vars: any;');
                 continue;
             }
-            const argsMatch = signature.match(/\(([^)]*)\)/);
-            const args = argsMatch ? argsMatch[1] : '';
             const typedArgs = args.split(',').filter(Boolean).map(arg => getParameterDeclaration(entry, arg)).join(', ');
             lines.push(`declare function ${name}(${typedArgs}): ${nodalOutputToTypeScript(entry.nodalOutput)};`);
         }

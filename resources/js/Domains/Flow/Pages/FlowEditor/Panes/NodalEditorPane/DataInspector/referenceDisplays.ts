@@ -4,6 +4,7 @@ import type { IntegrationProvider } from '@/Domains/Integration/types';
 import { getProviderConfig } from '@/Domains/Integration/Pages/providerConfig';
 import { DATA_TYPE_ICONS } from '@/Shared/Utils/dataTypeIcons';
 import { fetchChannelSuggestions } from '@/Domains/Flow/Pages/FlowEditor/utils/channelSuggestions';
+import { fetchDataTableSuggestions } from '@/Domains/Flow/Pages/FlowEditor/utils/dataTableSuggestions';
 import { fetchMailboxWatcherSuggestions } from '@/Domains/Flow/Pages/FlowEditor/utils/mailboxWatcherSuggestions';
 import {
     fetchVariableSuggestions,
@@ -19,12 +20,13 @@ export interface ReferenceDisplay {
     referenceLabel?: string;
 }
 
-const REFERENCE_PATTERN = /^\$\{(vars|channels|mailboxWatchers|aiModels)\.([^.}]+)(?:\.([^}]+))?\}$/;
+const REFERENCE_PATTERN = /^\$\{(vars|channels|mailboxWatchers|aiModels|dataTables)\.([^.}]+)(?:\.([^}]+))?\}$/;
 const REFERENCE_FALLBACK_ICONS: Record<string, string> = {
     vars: DATA_TYPE_ICONS.variable,
     channels: DATA_TYPE_ICONS.channel,
     mailboxWatchers: DATA_TYPE_ICONS['mailbox-watcher'],
     aiModels: DATA_TYPE_ICONS['ai-model'],
+    dataTables: DATA_TYPE_ICONS.datatable,
 };
 
 export function resolveReferenceDisplay(
@@ -34,11 +36,12 @@ export function resolveReferenceDisplay(
     const match = typeof value === 'string' ? value.match(REFERENCE_PATTERN) : null;
     if (!match) return null;
 
+    const reference = value as string;
     const resolved = references.get(`${match[1]}.${match[2]}`);
     return {
         label: resolved
             ? resolved.label + (match[3] ? `.${match[3]}` : '')
-            : value,
+            : reference,
         icon: resolved?.icon ?? REFERENCE_FALLBACK_ICONS[match[1]],
         iconColor: resolved?.iconColor,
         editUrl: resolved?.editUrl,
@@ -57,7 +60,8 @@ export function useReferenceDisplays(flowId?: Id) {
             fetchChannelSuggestions(),
             fetchAiModelSuggestions(),
             flowId ? fetchMailboxWatcherSuggestions(flowId) : Promise.resolve([]),
-        ] as const).then(([variables, channels, aiModels, watchers]) => {
+            flowId ? fetchDataTableSuggestions(flowId) : Promise.resolve([]),
+        ] as const).then(([variables, channels, aiModels, watchers, dataTables]) => {
             if (cancelled) return;
             const next = new Map<string, ReferenceDisplay>();
             if (variables.status === 'fulfilled') {
@@ -99,8 +103,16 @@ export function useReferenceDisplays(flowId?: Id) {
                     next.set(`mailboxWatchers.${watcher.id}`, {
                         label: watcher.name,
                         icon: provider?.icon ?? DATA_TYPE_ICONS['mailbox-watcher'],
-                            editUrl: `/flows/${encodeURIComponent(String(flowId))}?edit-watcher=${encodeURIComponent(String(watcher.id))}#mailboxes`,
+                        editUrl: `/flows/${encodeURIComponent(String(flowId))}?edit-watcher=${encodeURIComponent(String(watcher.id))}#mailboxes`,
                         ...(provider?.color ? { iconColor: provider.color } : {}),
+                    });
+                }
+            }
+            if (dataTables.status === 'fulfilled') {
+                for (const table of dataTables.value) {
+                    next.set(`dataTables.${table.id}`, {
+                        label: table.name,
+                        icon: DATA_TYPE_ICONS.datatable,
                     });
                 }
             }

@@ -39,7 +39,7 @@ function ResourceDetail({
     return (
         <Shared.OptionDetail>
             {visibility && <Icon icon={visibility.icon} width={11} height={11} />}
-            {visibility ? `${visibility.label} · ${detail}` : detail}
+            {visibility ? `${visibility.label} - ${detail}` : detail}
         </Shared.OptionDetail>
     );
 }

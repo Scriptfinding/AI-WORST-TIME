@@ -16,6 +16,7 @@ interface Props {
     busyId: number | null;
     readOnly: boolean;
     onToggleGroup: (group: string) => void;
+    onEdit: (library: PrivateLibrary) => void;
     onRefresh: (library: PrivateLibrary) => void;
     onDelete: (library: PrivateLibrary) => void;
 }
@@ -26,6 +27,7 @@ export default function PrivateLibrariesTable({
     busyId,
     readOnly,
     onToggleGroup,
+    onEdit,
     onRefresh,
     onDelete,
 }: Props) {
@@ -65,6 +67,7 @@ export default function PrivateLibrariesTable({
                                     library={library}
                                     busy={busyId === library.id}
                                     readOnly={readOnly}
+                                    onEdit={onEdit}
                                     onRefresh={onRefresh}
                                     onDelete={onDelete}
                                 />

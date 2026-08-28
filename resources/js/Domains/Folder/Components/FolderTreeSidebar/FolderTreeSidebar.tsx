@@ -226,7 +226,6 @@ export default function FolderTreeSidebar({
                                 teamTrees={teamTrees}
                                 teamsEnabled={teamsEnabled}
                                 disabled={!workspaceSectionEnabled}
-                                disabledFeatureMessage={settings?.disabled_feature_message ?? ''}
                                 currentFolderId={currentFolderId}
                                 active={currentView === 'workspace' && currentFolderId === null}
                                 expanded={workspaceExpanded}

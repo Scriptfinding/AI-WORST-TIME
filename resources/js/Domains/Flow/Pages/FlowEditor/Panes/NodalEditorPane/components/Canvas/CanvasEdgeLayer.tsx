@@ -25,10 +25,8 @@ interface CanvasEdgeLayerProps {
     knifeDrag: KnifeDragState | null;
     edgeDropTarget: EdgeDropTarget | null;
     runProgress?: {
-        activeNodeId: string | null;
-        passedNodeIds: Set<string>;
-        nodePassCounts: Map<string, number>;
-        errorNodeId?: string | null;
+        passedEdgeIds: Set<string>;
+        edgePassCounts: Map<string, number>;
     } | null;
 }
 
@@ -40,23 +38,17 @@ export default function CanvasEdgeLayer({
     edgeDropTarget,
     runProgress,
 }: CanvasEdgeLayerProps) {
-    const traversedNodeIds = new Set([
-        ...(runProgress?.passedNodeIds ?? []),
-        ...(runProgress?.activeNodeId ? [runProgress.activeNodeId] : []),
-        ...(runProgress?.errorNodeId ? [runProgress.errorNodeId] : []),
-    ]);
-
     return (
         <S.EdgeLayer>
             {edges.map(edge => {
                 const sourceNode = nodes.find(node => node.id === edge.sourceNodeId);
                 const targetNode = nodes.find(node => node.id === edge.targetNodeId);
                 if (!sourceNode || !targetNode) return null;
-                const runPassed = traversedNodeIds.has(edge.targetNodeId);
+                const runPassed = runProgress?.passedEdgeIds.has(edge.id) ?? false;
                 const start = getPortPosition(sourceNode, edge.sourcePort ?? DEFAULT_OUTPUT_PORT, 'output');
                 const end = getPortPosition(targetNode, edge.targetPort ?? DEFAULT_INPUT_PORT, 'input');
                 const midpoint = getEdgeMidpoint(start, end);
-                const passCount = runPassed ? runProgress?.nodePassCounts.get(edge.targetNodeId) ?? 0 : 0;
+                const passCount = runPassed ? runProgress?.edgePassCounts.get(edge.id) ?? 0 : 0;
                 const showPassCount = passCount >= 2;
 
                 return (

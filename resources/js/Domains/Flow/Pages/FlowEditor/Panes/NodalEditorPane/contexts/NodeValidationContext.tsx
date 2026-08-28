@@ -19,6 +19,7 @@ interface Props {
 }
 
 const loadingResources: NodeValidationResources = {
+    dataTables: { status: 'loading', items: [] },
     aiSetup: {
         status: 'loading',
         hasAiIntegration: false,
@@ -126,6 +127,12 @@ export function NodeValidationProvider({ flowId, children }: Props) {
                 names: new Set((Array.isArray(items) ? items : []).map(item => item.id)),
             }))
             .catch(() => ({ status: 'error' as const, names: new Set<string>() }));
+        const loadDataTables = fetchJson<NonNullable<NodeValidationResources['dataTables']>['items']>(
+            `/flows/${flowId}/data-table-resources`,
+            revision,
+        )
+            .then(items => ({ status: 'loaded' as const, items: Array.isArray(items) ? items : [] }))
+            .catch(() => ({ status: 'error' as const, items: [] }));
 
         Promise.all([
             loadAiSetup,
@@ -134,6 +141,7 @@ export function NodeValidationProvider({ flowId, children }: Props) {
             loadAiModels,
             loadChannels,
             loadMailboxWatchers,
+            loadDataTables,
         ]).then(([
             aiSetup,
             messengerSetup,
@@ -141,6 +149,7 @@ export function NodeValidationProvider({ flowId, children }: Props) {
             aiModels,
             channels,
             mailboxWatchers,
+            dataTables,
         ]) => {
             if (active) {
                 setResources({
@@ -150,6 +159,7 @@ export function NodeValidationProvider({ flowId, children }: Props) {
                     aiModels,
                     channels,
                     mailboxWatchers,
+                    dataTables,
                 });
                 refreshResolversRef.current.splice(0).forEach(resolve => resolve());
             }

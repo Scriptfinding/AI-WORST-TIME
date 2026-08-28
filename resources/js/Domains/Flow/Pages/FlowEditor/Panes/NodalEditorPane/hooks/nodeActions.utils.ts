@@ -1,10 +1,12 @@
 import {
+    connectEdgeWithStructuredJoins,
     edgeSourcePort,
     edgeTargetPort,
-    hasAvailableHandlesForEdge,
+    normalizeStructuredEdges,
 } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/edges';
 import type {
     CanvasEdge,
+    CanvasNode,
     NodeParameterValue,
     StickyNoteData,
 } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/types';
@@ -24,8 +26,9 @@ export function randomCanvasOffset() {
     return (Math.random() - 0.5) * FREE_ADD_RANDOM_OFFSET * 2;
 }
 
-export function reconnectDeletedLinearNodes(edges: CanvasEdge[], removableIds: Set<string>) {
+export function reconnectDeletedLinearNodes(nodes: CanvasNode[], edges: CanvasEdge[], removableIds: Set<string>) {
     const nextEdges = edges.filter(edge => !removableIds.has(edge.sourceNodeId) && !removableIds.has(edge.targetNodeId));
+    const remainingNodes = nodes.filter(node => !removableIds.has(node.id));
 
     const incomingBoundaryEdges = edges.filter(edge => (
         !removableIds.has(edge.sourceNodeId) && removableIds.has(edge.targetNodeId)
@@ -56,24 +59,25 @@ export function reconnectDeletedLinearNodes(edges: CanvasEdge[], removableIds: S
 
         const sourcePort = edgeSourcePort(incomingEdge);
         const targetPort = edgeTargetPort(outgoingEdge);
-        if (!hasAvailableHandlesForEdge(
-            nextEdges,
-            incomingEdge.sourceNodeId,
-            sourcePort,
-            outgoingEdge.targetNodeId,
-            targetPort,
-        )) return;
-
-        nextEdges.push({
+        const candidateEdge = {
             id: `${incomingEdge.sourceNodeId}:${sourcePort}->${outgoingEdge.targetNodeId}:${targetPort}`,
             sourceNodeId: incomingEdge.sourceNodeId,
             targetNodeId: outgoingEdge.targetNodeId,
             sourcePort,
             targetPort,
-        });
+        };
+        const connectedEdges = connectEdgeWithStructuredJoins(
+            remainingNodes,
+            nextEdges,
+            candidateEdge,
+        );
+        if (connectedEdges === nextEdges) return;
+        nextEdges.splice(0, nextEdges.length, ...connectedEdges);
     });
 
-    return nextEdges;
+    // Deleting a split node (e.g. an IF) can leave its former join with orphaned
+    // multi-input edges; drop the edges that no longer form a structured graph.
+    return normalizeStructuredEdges(remainingNodes, nextEdges);
 }
 
 function remapOutputReferences(source: string, idMap: Map<string, string>) {

@@ -3,6 +3,7 @@ import type { NodalGraph } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEdit
 
 export const RUN_EVENT_PREFIX = '__NOP_RUN_EVENT__';
 const RUN_NODE_MARKER_RE = /^\s*__nopRunNode(?:Start|End)\(".*"\);\s*$/;
+const RUN_EDGE_MARKER_RE = /^\s*__nopRunEdge\(".*"\);\s*$/;
 const getLineMarkerValue = (line: string): number | null => {
     const match = line.match(/__nopRunLine\((\d+)\);/);
     return match ? Number(match[1]) : null;
@@ -10,7 +11,8 @@ const getLineMarkerValue = (line: string): number | null => {
 
 type RunProgressEvent =
     | { kind: 'line'; line: number; phase: 'start' | 'end'; offset_ms?: number }
-    | { kind: 'node'; nodeId: string; phase: 'start' | 'end'; offset_ms?: number };
+    | { kind: 'node'; nodeId: string; phase: 'start' | 'end'; offset_ms?: number }
+    | { kind: 'edge'; edgeId: string; offset_ms?: number };
 
 export interface RunProgressState {
     activeLine: number | null;
@@ -19,6 +21,8 @@ export interface RunProgressState {
     activeNodeId: string | null;
     passedNodeIds: Set<string>;
     nodePassCounts: Map<string, number>;
+    passedEdgeIds: Set<string>;
+    edgePassCounts: Map<string, number>;
 }
 
 interface DisplayCodeSnapshot {
@@ -46,6 +50,9 @@ const parseRunProgressEvent = (message: string): RunProgressEvent | null => {
                 phase: parsed.phase === 'end' ? 'end' : 'start',
                 offset_ms: parsed.offset_ms,
             };
+        }
+        if (parsed.kind === 'edge' && typeof parsed.edgeId === 'string') {
+            return { kind: 'edge', edgeId: parsed.edgeId, offset_ms: parsed.offset_ms };
         }
     } catch {}
 
@@ -86,6 +93,8 @@ export const getRunProgressState = (logs: ConsoleLogEntry[] | null | undefined):
     const linePassCounts = new Map<number, number>();
     const passedNodeIds = new Set<string>();
     const nodePassCounts = new Map<string, number>();
+    const passedEdgeIds = new Set<string>();
+    const edgePassCounts = new Map<string, number>();
     let activeLine: number | null = null;
     let activeNodeId: string | null = null;
 
@@ -115,10 +124,22 @@ export const getRunProgressState = (logs: ConsoleLogEntry[] | null | undefined):
                 activeNodeId = event.nodeId;
                 passedNodeIds.delete(event.nodeId);
             }
+        } else if (event.kind === 'edge') {
+            passedEdgeIds.add(event.edgeId);
+            edgePassCounts.set(event.edgeId, (edgePassCounts.get(event.edgeId) ?? 0) + 1);
         }
     }
 
-    return { activeLine, passedLines, linePassCounts, activeNodeId, passedNodeIds, nodePassCounts };
+    return {
+        activeLine,
+        passedLines,
+        linePassCounts,
+        activeNodeId,
+        passedNodeIds,
+        nodePassCounts,
+        passedEdgeIds,
+        edgePassCounts,
+    };
 };
 
 export const extractNodalGraphSnapshot = (codeSnapshot: string | null | undefined): NodalGraph | null => {
@@ -167,7 +188,7 @@ export const getDisplayCodeSnapshotWithLineMap = (codeSnapshot: string | null | 
             pendingHiddenMarkerLines.push(markerLine);
             return;
         }
-        if (RUN_NODE_MARKER_RE.test(line)) return;
+        if (RUN_NODE_MARKER_RE.test(line) || RUN_EDGE_MARKER_RE.test(line)) return;
 
         visibleLines.push(line);
         lineMap.set(originalLine, visibleLines.length);
@@ -192,12 +213,14 @@ const getNodeIdFromMarker = (line: string, marker: 'Start' | 'End'): string | nu
 export const getVisualRunProgressState = (
     codeSnapshot: string | null | undefined,
     progress: RunProgressState,
-): Pick<RunProgressState, 'activeNodeId' | 'passedNodeIds' | 'nodePassCounts'> => {
-    if (progress.activeNodeId || progress.passedNodeIds.size > 0) {
+): Pick<RunProgressState, 'activeNodeId' | 'passedNodeIds' | 'nodePassCounts' | 'passedEdgeIds' | 'edgePassCounts'> => {
+    if (progress.activeNodeId || progress.passedNodeIds.size > 0 || progress.passedEdgeIds.size > 0) {
         return {
             activeNodeId: progress.activeNodeId,
             passedNodeIds: progress.passedNodeIds,
             nodePassCounts: progress.nodePassCounts,
+            passedEdgeIds: progress.passedEdgeIds,
+            edgePassCounts: progress.edgePassCounts,
         };
     }
 
@@ -229,6 +252,7 @@ export const getVisualRunProgressState = (
             if (lastIndex >= 0) nodeStack.splice(lastIndex, 1);
             return;
         }
+        if (RUN_EDGE_MARKER_RE.test(line)) return;
 
         const currentNodeId = nodeStack[nodeStack.length - 1];
         if (currentNodeId) {
@@ -254,6 +278,12 @@ export const getVisualRunProgressState = (
     const activeNodeId = progress.activeLine ? lineToNodeId.get(progress.activeLine) ?? null : null;
     if (activeNodeId) passedNodeIds.delete(activeNodeId);
 
-    return { activeNodeId, passedNodeIds, nodePassCounts };
+    return {
+        activeNodeId,
+        passedNodeIds,
+        nodePassCounts,
+        passedEdgeIds: new Set(),
+        edgePassCounts: new Map(),
+    };
 };
 

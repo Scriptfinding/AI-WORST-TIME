@@ -25,13 +25,14 @@ const toDecorations = (
 
 // Configures the run snapshot editor and decorates active, passed, and failed lines.
 export function useCodeSnapshotEditor({
+    runId,
     code,
     activeLine,
     passedLines,
     errorLine = null,
 }: Pick<
     CodeSnapshotEditorProps,
-    'code' | 'activeLine' | 'passedLines' | 'errorLine'
+    'runId' | 'code' | 'activeLine' | 'passedLines' | 'errorLine'
 >) {
     const [editorInstance, setEditorInstance] =
         useState<editor.IStandaloneCodeEditor | null>(null);
@@ -99,6 +100,7 @@ export function useCodeSnapshotEditor({
         decorations,
         line: displayErrorLine ?? displayActiveLine,
         reveal: revealOptions,
+        revealKey: runId,
     });
 
     return {

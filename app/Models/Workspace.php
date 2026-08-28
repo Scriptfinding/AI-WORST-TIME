@@ -110,6 +110,7 @@ class Workspace extends Model
         });
 
         static::deleting(function (Workspace $workspace) {
+            $workspace->dataTables->each->delete();
             $workspace->flows->each->delete();
 
             DB::afterCommit(
@@ -148,6 +149,12 @@ class Workspace extends Model
     public function flows(): HasMany
     {
         return $this->hasMany(Flow::class);
+    }
+
+    /** @return HasMany<DataTable, $this> */
+    public function dataTables(): HasMany
+    {
+        return $this->hasMany(DataTable::class);
     }
 
     public function getEffectiveRetentionDefault(): int

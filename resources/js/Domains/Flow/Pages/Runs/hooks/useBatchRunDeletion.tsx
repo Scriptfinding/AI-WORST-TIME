@@ -32,7 +32,7 @@ export function useBatchRunDeletion(removeRunIdsFromSelection: (ids: number[]) =
                             <ConfirmFlowItem key={run.id} as="div">
                                 <ConfirmationFlowItemLabel>
                                     {run.flow && <FlowIcon flow={run.flow} size={16} radius="xs" />}
-                                    <span>#{run.id} · {run.flow?.name || 'Unknown flow'}</span>
+                                    <span>#{run.id} - {run.flow?.name || 'Unknown flow'}</span>
                                 </ConfirmationFlowItemLabel>
                             </ConfirmFlowItem>
                         ))}

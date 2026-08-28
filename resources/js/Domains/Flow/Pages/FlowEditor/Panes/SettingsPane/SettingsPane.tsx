@@ -22,12 +22,22 @@ import * as S from './styled';
 interface SettingsPaneProps {
     flow: Flow;
     workspaceProxies: FlowEditorProps['workspaceProxies'];
+    teams: FlowEditorProps['teams'];
+    canManageWorkspaceProxies: boolean;
     scrollTo?: string | null;
     onScrollHandled?: () => void;
     onDirtyChange?: (isDirty: boolean) => void;
 }
 
-export default function SettingsPane({ flow, workspaceProxies, scrollTo, onScrollHandled, onDirtyChange }: SettingsPaneProps) {
+export default function SettingsPane({
+    flow,
+    workspaceProxies,
+    teams,
+    canManageWorkspaceProxies,
+    scrollTo,
+    onScrollHandled,
+    onDirtyChange,
+}: SettingsPaneProps) {
     const iconSectionRef = useRef<HTMLDivElement>(null);
     const { confirm, ConfirmModal } = useConfirm();
     const limits = useSettingsLimits(flow);
@@ -127,7 +137,13 @@ export default function SettingsPane({ flow, workspaceProxies, scrollTo, onScrol
                 <S.SettingsForm onSubmit={handleSaveSettings}>
                     <GeneralSection form={settingsForm} />
                     <AISection form={settingsForm} />
-                    <RunSection form={settingsForm} limits={limits} workspaceProxies={workspaceProxies} />
+                    <RunSection
+                        form={settingsForm}
+                        limits={limits}
+                        workspaceProxies={workspaceProxies}
+                        teams={teams}
+                        canManageWorkspaceProxies={canManageWorkspaceProxies}
+                    />
                     <OutputSection form={settingsForm} isNodalFlow={isNodalFlow} />
                     <ArtifactsSection
                         form={settingsForm}

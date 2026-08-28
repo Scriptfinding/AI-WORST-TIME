@@ -62,7 +62,7 @@ export default function CustomSelect<T extends Id>({
     compactHeight,
     invalid,
     showOptionValue = true,
-    searchThreshold = 8,
+    searchThreshold = 0,
     headerSlot,
     actionSlot,
     onRefresh,
@@ -162,6 +162,7 @@ export default function CustomSelect<T extends Id>({
 
     const handleKeyDown = (event: KeyboardEvent) => {
         if (disabled || loading) return;
+        const fromSearchInput = event.target === searchInputRef.current;
 
         if (!open && ['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
             event.preventDefault();
@@ -177,13 +178,13 @@ export default function CustomSelect<T extends Id>({
         } else if (event.key === 'ArrowUp') {
             event.preventDefault();
             setActiveIndex(current => Math.max(current - 1, 0));
-        } else if (event.key === 'Home') {
+        } else if (event.key === 'Home' && !fromSearchInput) {
             event.preventDefault();
             setActiveIndex(0);
-        } else if (event.key === 'End') {
+        } else if (event.key === 'End' && !fromSearchInput) {
             event.preventDefault();
             setActiveIndex(Math.max(0, filteredOptions.length - 1));
-        } else if (event.key === 'Enter' || event.key === ' ') {
+        } else if (event.key === 'Enter' || (event.key === ' ' && !fromSearchInput)) {
             event.preventDefault();
             selectOption(filteredOptions[activeIndex] ?? filteredOptions[0]);
         } else if (event.key === 'Escape') {
@@ -248,6 +249,7 @@ export default function CustomSelect<T extends Id>({
             </S.SelectTrigger>
             {open && !disabled && !actionLoading && dropdownRect && (
                 <S.SelectDropdown
+                    data-node-field-dropdown="true"
                     $compact={compact}
                     style={{
                         top: dropdownRect.top,
@@ -356,16 +358,16 @@ export default function CustomSelect<T extends Id>({
                                     )}
                                     <strong>{option.label}</strong>
                                 </S.SelectOptionMain>
-                                {option.detail
-                                    ? (
-                                        <S.SelectOptionDetail>
-                                            {option.detailIcon && (
-                                                <Icon icon={option.detailIcon} width={11} height={11} />
-                                            )}
-                                            {option.detail}
-                                        </S.SelectOptionDetail>
-                                    )
-                                    : showOptionValue && option.value !== option.label && <span>{option.value}</span>}
+                                {option.detail ? (
+                                    <S.SelectOptionDetail>
+                                        {option.detailIcon && (
+                                            <Icon icon={option.detailIcon} width={11} height={11} />
+                                        )}
+                                        {option.detail}
+                                    </S.SelectOptionDetail>
+                                ) : showOptionValue && option.value !== option.label ? (
+                                    <S.SelectOptionDetail>{option.value}</S.SelectOptionDetail>
+                                ) : null}
                                 {option.value === value && (
                                     <S.SelectCheck>
                                         <Icon icon="lucide:check" width={13} height={13} />

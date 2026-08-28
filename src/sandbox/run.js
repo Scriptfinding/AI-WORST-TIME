@@ -70,7 +70,14 @@ module.exports = async function(appDir, flowId, quiet) {
 
   const browserConnect = PINOKIO_ENABLED ? `
     const $browser = await (async () => {
-      const _qp = { launch: JSON.stringify(launchOptions), stealth: 'true' };
+      const _proxyServerArg = _browserArgs.find(arg => arg.startsWith('--proxy-server='));
+      const _proxyBypassListArg = _browserArgs.find(arg => arg.startsWith('--proxy-bypass-list='));
+      const _gatewayLaunch = {
+        proxyServer: _proxyServerArg?.slice('--proxy-server='.length),
+        proxyBypassList: _proxyBypassListArg?.slice('--proxy-bypass-list='.length),
+        disableWebSecurity: _disableWebSecurity,
+      };
+      const _qp = { launch: JSON.stringify(_gatewayLaunch), stealth: 'true' };
       ${PINOKIO_TOKEN ? `_qp.token = ${JSON.stringify(PINOKIO_TOKEN)};` : ''}
       if (process.env.FLOW_TIMEOUT_MS) { _qp.timeout = process.env.FLOW_TIMEOUT_MS; }
       const queryParams = new URLSearchParams(_qp);
@@ -146,14 +153,14 @@ module.exports = async function(appDir, flowId, quiet) {
     runnerProxy = new ProxyChainServer({
       host: '0.0.0.0',
       port: 0,
-      prepareRequestFunction: ({ request, username, password }) => {
+      prepareRequestFunction: ({ username, password, hostname, isHttp }) => {
         const authenticated = username === runnerProxyCredentials.username
           && password === runnerProxyCredentials.password;
 
         return {
           requestAuthentication: !authenticated,
           upstreamProxyUrl: authenticatedProxyUrl.toString(),
-          customResponseFunction: request.url === 'http://proxy-auth.puppetflow.invalid/'
+          customResponseFunction: isHttp && hostname === 'proxy-auth.puppetflow.invalid'
             ? () => ({ statusCode: 200, body: '' })
             : undefined,
         };

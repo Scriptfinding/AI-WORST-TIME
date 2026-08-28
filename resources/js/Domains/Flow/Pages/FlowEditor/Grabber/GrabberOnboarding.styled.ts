@@ -58,12 +58,17 @@ export const BrandMark = styled.span`
     color: ${({ theme }) => theme.colors.brand};
 `;
 
+export const StoreBanners = styled.div`
+    display: grid;
+    gap: 8px;
+    margin: 0 0 22px;
+`;
+
 export const StoreBanner = styled.a`
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    margin: 0 0 22px;
     padding: 10px 12px;
     border: 1px solid ${({ theme }) => theme.colors.border.default};
     border-radius: 10px;

@@ -246,13 +246,13 @@ export const SelectOption = styled.button<{ $active?: boolean; $selected?: boole
     min-width: 0;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 10px;
     padding: 8px 9px;
     border-radius: ${({ theme }) => theme.radius.sm};
     color: ${({ theme }) => theme.colors.text.secondary};
-    background: ${({ theme, $active, $selected }) => (
-        $active && !$selected
+    background: ${({ theme, $active }) => (
+        $active
             ? `color-mix(in srgb, ${theme.colors.bg.hover} 55%, transparent)`
             : 'transparent'
     )};
@@ -308,6 +308,7 @@ export const SelectOptionMain = styled.div`
 `;
 
 export const SelectOptionDetail = styled.span`
+    margin-left: auto;
     display: inline-flex;
     align-items: center;
     gap: 4px;

@@ -20,6 +20,7 @@ const PAGE_DOMAINS: Record<string, string> = {
     AiModels: 'AiModel',
     Auth: 'Auth',
     Channels: 'NotificationChannel',
+    DataTable: 'DataTable',
     Flow: 'Flow',
     Integrations: 'Integration',
     License: 'Licensing',
@@ -51,13 +52,26 @@ if (import.meta.env.DEV) {
     import('react-grab');
 }
 
-function getGrabberStoreUrl(props: Record<string, unknown>): string {
+function getGrabberChromeStoreUrl(props: Record<string, unknown>): string {
     const settings = props.settings;
-    if (!settings || typeof settings !== 'object' || !('grabber_store_url' in settings)) {
+    if (!settings || typeof settings !== 'object' || !('grabber_chrome_store_url' in settings)) {
         return '';
     }
 
-    return typeof settings.grabber_store_url === 'string' ? settings.grabber_store_url : '';
+    return typeof settings.grabber_chrome_store_url === 'string'
+        ? settings.grabber_chrome_store_url
+        : '';
+}
+
+function getGrabberFirefoxStoreUrl(props: Record<string, unknown>): string {
+    const settings = props.settings;
+    if (!settings || typeof settings !== 'object' || !('grabber_firefox_store_url' in settings)) {
+        return '';
+    }
+
+    return typeof settings.grabber_firefox_store_url === 'string'
+        ? settings.grabber_firefox_store_url
+        : '';
 }
 
 router.on('navigate', (event) => {
@@ -76,13 +90,17 @@ createInertiaApp({
     setup({ el, App, props }) {
         syncAppPage(props.initialPage);
         const branding = getAppPageBranding(props.initialPage.props);
-        const grabberStoreUrl = getGrabberStoreUrl(props.initialPage.props);
+        const grabberChromeStoreUrl = getGrabberChromeStoreUrl(props.initialPage.props);
+        const grabberFirefoxStoreUrl = getGrabberFirefoxStoreUrl(props.initialPage.props);
 
         createRoot(el).render(
             <ThemeModeProvider initialAccentColor={branding?.accentColor}>
                 <GlobalStyles />
                 <ToastProvider>
-                    <GrabberProvider storeUrl={grabberStoreUrl}>
+                    <GrabberProvider
+                        chromeStoreUrl={grabberChromeStoreUrl}
+                        firefoxStoreUrl={grabberFirefoxStoreUrl}
+                    >
                         <PageOnboardingModal initialPage={props.initialPage}>
                             <App {...props} />
                         </PageOnboardingModal>

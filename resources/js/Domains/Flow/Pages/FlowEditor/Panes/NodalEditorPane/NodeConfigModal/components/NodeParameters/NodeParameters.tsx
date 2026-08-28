@@ -6,7 +6,7 @@ import type { NodalAutocompleteContext } from '@/Domains/Flow/Pages/FlowEditor/P
 import {
     CODE_NODE_NAME,
     CODE_NODE_VALUE_KEY,
-    IF_ELSE_NODE_NAME,
+    isConditionalBranchNodeName,
     LOOP_NODE_NAME,
     NO_OP_NODE_NAME,
     SET_NODE_NAME,
@@ -23,9 +23,8 @@ import RunOutputField from './RunOutputField/RunOutputField';
 import * as S from './styled';
 
 const canNameNodeOutput = (entryName: string) => {
-    return ![
+    return !isConditionalBranchNodeName(entryName) && ![
         CODE_NODE_NAME,
-        IF_ELSE_NODE_NAME,
         LOOP_NODE_NAME,
         NO_OP_NODE_NAME,
         SET_NODE_NAME,
@@ -222,6 +221,7 @@ export default function NodeParameters({
                     value={normalizeScalarParameterValue(node.values[CODE_NODE_VALUE_KEY]).value}
                     outputData={expressionOutputData}
                     autocompleteContext={autocompleteContext}
+                    flowId={flowId}
                     readOnly={readOnly}
                     onChange={value => onUpdateValue(node.id, CODE_NODE_VALUE_KEY, { mode: 'fixed', value })}
                 />

@@ -82,6 +82,7 @@ export default function ExpressionInput({
         autocompleteOutputData,
         inputType,
         isExpressionMode,
+        flowId,
         value,
         onChange,
     });

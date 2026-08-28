@@ -162,7 +162,7 @@ class LibraryCatalogService
 
             $library->update([
                 'repo' => $repo,
-                'branch' => $branch,
+                'branch' => $manifest->branch ?? $branch,
                 'manifest' => $manifest->toArray(),
                 'cached_at' => now(),
                 'last_error' => null,
@@ -236,12 +236,38 @@ class LibraryCatalogService
             'recursive' => 1,
         ]);
 
-        if (! $treeResponse->successful()) {
-            throw new \RuntimeException('Unable to fetch the library GitHub tree.');
+        if ($treeResponse->notFound()) {
+            $repositoryResponse = Http::timeout(12)->get("https://api.github.com/repos/{$repo}");
+            $defaultBranch = $repositoryResponse->successful()
+                ? $repositoryResponse->json('default_branch')
+                : null;
+
+            if (is_string($defaultBranch) && $defaultBranch !== '' && $defaultBranch !== $branch) {
+                $branch = $defaultBranch;
+                $treeResponse = Http::timeout(12)->get("https://api.github.com/repos/{$repo}/git/trees/{$branch}", [
+                    'recursive' => 1,
+                ]);
+            }
         }
 
-        /** @var list<array{path: string, type: string, sha?: string}> $tree */
-        $tree = $treeResponse->json('tree', []);
+        if ($treeResponse->successful()) {
+            /** @var list<array{path: string, type: string, sha?: string}> $tree */
+            $tree = $treeResponse->json('tree', []);
+        } else {
+            $archive = $this->fetchGitHubArchiveTree($repo, $branch);
+            if ($archive === null) {
+                $message = $treeResponse->json('message');
+                $reason = is_string($message) && $message !== ''
+                    ? " GitHub responded with {$treeResponse->status()}: {$message}"
+                    : " GitHub responded with {$treeResponse->status()}.";
+
+                throw new \RuntimeException('Unable to fetch the library GitHub tree.'.$reason);
+            }
+
+            $branch = $archive['branch'];
+            $tree = $archive['tree'];
+        }
+
         $entries = collect($tree);
         /** @var array<string, LibraryMetadata> $metadataByService */
         $metadataByService = [];
@@ -392,6 +418,78 @@ class LibraryCatalogService
             privateLibraryId: $privateLibrary->id,
             items: array_values($blueprints),
         );
+    }
+
+    /**
+     * @return array{
+     *     branch: string,
+     *     tree: list<array{path: string, type: string, sha: string}>
+     * }|null
+     */
+    private function fetchGitHubArchiveTree(string $repo, string $branch): ?array
+    {
+        $candidates = array_values(array_unique([$branch, 'HEAD']));
+
+        foreach ($candidates as $candidate) {
+            $response = Http::timeout(30)->get("https://codeload.github.com/{$repo}/zip/{$candidate}");
+            if (! $response->successful()) {
+                continue;
+            }
+
+            $temporaryPath = tempnam(sys_get_temp_dir(), 'puppetflow-library-');
+            if ($temporaryPath === false) {
+                return null;
+            }
+
+            try {
+                if (file_put_contents($temporaryPath, $response->body()) === false) {
+                    continue;
+                }
+
+                $zip = new \ZipArchive;
+                if ($zip->open($temporaryPath) !== true) {
+                    continue;
+                }
+
+                $tree = [];
+                try {
+                    for ($index = 0; $index < $zip->numFiles; $index++) {
+                        $stat = $zip->statIndex($index);
+                        if (! is_array($stat)) {
+                            continue;
+                        }
+
+                        $archivePath = $stat['name'] ?? null;
+                        if (! is_string($archivePath) || str_ends_with($archivePath, '/')) {
+                            continue;
+                        }
+
+                        $separator = strpos($archivePath, '/');
+                        if ($separator === false || $separator === strlen($archivePath) - 1) {
+                            continue;
+                        }
+
+                        $path = substr($archivePath, $separator + 1);
+                        $tree[] = [
+                            'path' => $path,
+                            'type' => 'blob',
+                            'sha' => sha1($path.':'.($stat['crc'] ?? '').':'.($stat['size'] ?? '')),
+                        ];
+                    }
+                } finally {
+                    $zip->close();
+                }
+
+                return [
+                    'branch' => $candidate,
+                    'tree' => $tree,
+                ];
+            } finally {
+                @unlink($temporaryPath);
+            }
+        }
+
+        return null;
     }
 
     private function blueprintItem(string $repo, string $branch, string $service, LibraryMetadata $metadata, string $basePath, ?string $sourceSha, PrivateLibrary $privateLibrary): LibraryBlueprint

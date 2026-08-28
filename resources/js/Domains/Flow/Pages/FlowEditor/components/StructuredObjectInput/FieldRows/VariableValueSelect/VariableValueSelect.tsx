@@ -284,7 +284,7 @@ export default function VariableValueSelect({
                                             <Icon icon={visibility.icon} width={11} height={11} />
                                         )}
                                         {visibility
-                                            ? `${visibility.label} · ${variable.type}`
+                                            ? `${visibility.label} - ${variable.type}`
                                             : variable.type}
                                     </span>
                                 </S.Item>

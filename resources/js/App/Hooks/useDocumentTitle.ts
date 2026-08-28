@@ -21,14 +21,14 @@ export function useDocumentTitle(base: string, runs: FlowRun[], waitingHumanIds?
         const latestRun = runs[0];
 
         if (activeRun && waitingHumanIds?.has(activeRun.id)) {
-            document.title = `✋ Waiting · ${baseTitle}`;
+            document.title = `✋ Waiting - ${baseTitle}`;
             return;
         }
 
         if (activeRun) {
             let frame = 0;
             const tick = () => {
-                document.title = `${SPINNER_FRAMES[frame]} Running · ${baseTitle}`;
+                document.title = `${SPINNER_FRAMES[frame]} Running - ${baseTitle}`;
                 frame = (frame + 1) % SPINNER_FRAMES.length;
             };
             tick();
@@ -37,7 +37,7 @@ export function useDocumentTitle(base: string, runs: FlowRun[], waitingHumanIds?
         }
 
         if (pendingRun) {
-            document.title = `${STATUS_EMOJI.pending} Pending · ${baseTitle}`;
+            document.title = `${STATUS_EMOJI.pending} Pending - ${baseTitle}`;
             return;
         }
 

@@ -136,7 +136,7 @@ export default function InputsEditor({ flow, canEdit, saveRef }: InputsEditorPro
                     value={defaultInputs}
                     onChange={handleDefaultInputsChange}
                     label="Input data"
-                    jsonHint={<>Type {'${vars.'}, {'${channels.'}, {'${mailboxWatchers.'} or {'${aiModels.'} to insert a reference (autocompleted).</>}
+                    jsonHint={<>Type {'${vars.'}, {'${channels.'}, {'${mailboxWatchers.'}, {'${aiModels.'} or {'${dataTables.'} to insert a reference (autocompleted).</>}
                     expandableTitle="Flow Inputs"
                     modeStorageKey="flow-inputs"
                     readOnly={!canEdit}

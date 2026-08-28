@@ -11,6 +11,10 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SocialLoginController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DataTable\DataTableColumnController;
+use App\Http\Controllers\DataTable\DataTableController;
+use App\Http\Controllers\DataTable\DataTableResourceController;
+use App\Http\Controllers\DataTable\DataTableRowController;
 use App\Http\Controllers\Flow\FlowActionController;
 use App\Http\Controllers\Flow\FlowBatchController;
 use App\Http\Controllers\Flow\FlowContentController;
@@ -113,6 +117,26 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', \App\Http\Middleware\EnsureWorkspaceAccess::class])->group(function () {
 
     Route::get('/', DashboardController::class)->name('dashboard');
+
+    // Data tables
+    Route::get('data-tables', [DataTableController::class, 'index'])->name('data-tables.index');
+    Route::post('data-tables', [DataTableController::class, 'store'])->name('data-tables.store');
+    Route::delete('data-tables/bulk-delete', [DataTableController::class, 'destroyBatch'])->name('data-tables.destroyBatch');
+    Route::get('data-tables/{dataTable}', [DataTableController::class, 'show'])->name('data-tables.show');
+    Route::put('data-tables/{dataTable}', [DataTableController::class, 'update'])->name('data-tables.update');
+    Route::delete('data-tables/{dataTable}', [DataTableController::class, 'destroy'])->name('data-tables.destroy');
+    Route::post('data-tables/{dataTable}/export', [DataTableController::class, 'downloadExport'])->name('data-tables.export');
+    Route::post('data-tables/{dataTable}/columns', [DataTableColumnController::class, 'store'])->name('data-tables.columns.store');
+    Route::put('data-tables/{dataTable}/columns/reorder', [DataTableColumnController::class, 'reorder'])->name('data-tables.columns.reorder');
+    Route::put('data-tables/{dataTable}/columns/{dataTableColumn}', [DataTableColumnController::class, 'update'])->name('data-tables.columns.update');
+    Route::delete('data-tables/{dataTable}/columns/{dataTableColumn}', [DataTableColumnController::class, 'destroy'])->name('data-tables.columns.destroy');
+    Route::get('data-tables/{dataTable}/rows', [DataTableRowController::class, 'index'])->name('data-tables.rows.index');
+    Route::post('data-tables/{dataTable}/rows', [DataTableRowController::class, 'store'])->name('data-tables.rows.store');
+    Route::post('data-tables/{dataTable}/rows/import', [DataTableRowController::class, 'import'])->name('data-tables.rows.import');
+    Route::delete('data-tables/{dataTable}/rows/bulk-delete', [DataTableRowController::class, 'destroyBatch'])->name('data-tables.rows.destroyBatch');
+    Route::put('data-tables/{dataTable}/rows/{rowId}', [DataTableRowController::class, 'update'])->name('data-tables.rows.update');
+    Route::delete('data-tables/{dataTable}/rows/{rowId}', [DataTableRowController::class, 'destroy'])->name('data-tables.rows.destroy');
+    Route::get('flows/{flow}/data-table-resources', DataTableResourceController::class)->name('flows.data-table-resources');
 
     // Flows
     Route::get('library/items', [LibraryController::class, 'index'])->name('library.items');
@@ -317,6 +341,8 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureWorkspaceAccess::class])->
     Route::put('workspace/private-libraries/{privateLibrary}', [PrivateLibraryController::class, 'update'])->name('workspace.private-libraries.update');
     Route::post('workspace/private-libraries/{privateLibrary}/refresh', [PrivateLibraryController::class, 'refresh'])->name('workspace.private-libraries.refresh');
     Route::delete('workspace/private-libraries/{privateLibrary}', [PrivateLibraryController::class, 'destroy'])->name('workspace.private-libraries.destroy');
+    Route::post('workspace/proxies/test', [WorkspaceProxyController::class, 'test'])->name('workspace.proxies.test');
+    Route::post('workspace/proxies/{workspaceProxy}/test', [WorkspaceProxyController::class, 'testExisting'])->name('workspace.proxies.test-existing');
     Route::post('workspace/proxies', [WorkspaceProxyController::class, 'store'])->name('workspace.proxies.store');
     Route::put('workspace/proxies/{workspaceProxy}', [WorkspaceProxyController::class, 'update'])->name('workspace.proxies.update');
     Route::delete('workspace/proxies/{workspaceProxy}', [WorkspaceProxyController::class, 'destroy'])->name('workspace.proxies.destroy');

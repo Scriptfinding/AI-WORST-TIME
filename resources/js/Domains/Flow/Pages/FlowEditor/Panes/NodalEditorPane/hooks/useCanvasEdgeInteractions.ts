@@ -2,8 +2,8 @@ import type React from 'react';
 import { useCallback } from 'react';
 import { DEFAULT_INPUT_PORT } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/constants';
 import {
+    connectEdgeWithStructuredJoins,
     connectsSeparateSystemFlows,
-    edgeConflictsWithHandles,
 } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/edges';
 import { getPortPosition } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/geometry';
 import type {
@@ -100,27 +100,17 @@ export function useCanvasEdgeInteractions({
             }
 
             recordHistory();
-            setEdges(current => {
-                const nextEdges = current.filter(edge => !edgeConflictsWithHandles(
-                    edge,
+            setEdges(current => connectEdgeWithStructuredJoins(
+                nodes,
+                current,
+                {
+                    id: `${sourceNodeId}:${sourcePort}->${finalTargetNodeId}:${targetPortId}`,
                     sourceNodeId,
+                    targetNodeId: finalTargetNodeId,
                     sourcePort,
-                    finalTargetNodeId,
-                    targetPortId,
-                ));
-
-                const candidateEdges = [
-                    ...nextEdges,
-                    {
-                        id: `${sourceNodeId}:${sourcePort}->${finalTargetNodeId}:${targetPortId}`,
-                        sourceNodeId,
-                        targetNodeId: finalTargetNodeId,
-                        sourcePort,
-                        targetPort: targetPortId,
-                    },
-                ];
-                return candidateEdges;
-            });
+                    targetPort: targetPortId,
+                },
+            ));
         } else if (!targetNodeId || targetNodeId === connectionDragState.fromNodeId) {
             setPendingConnectionTarget({
                 fromNodeId: connectionDragState.fromNodeId,

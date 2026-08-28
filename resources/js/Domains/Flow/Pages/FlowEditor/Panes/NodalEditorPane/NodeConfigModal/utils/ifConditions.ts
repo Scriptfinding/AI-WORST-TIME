@@ -87,9 +87,9 @@ export const IF_CATEGORY_ICONS: Record<IfConditionCategory, string> = {
 export function defaultIfRule(): IfConditionRule {
     return {
         id: `condition-${Date.now()}`,
-        category: 'string',
-        operator: 'exists',
-        left: { mode: 'expression', value: '{{ $input.value }}' },
+        category: 'boolean',
+        operator: 'isTrue',
+        left: { mode: 'expression', value: '{{ true }}' },
         right: { mode: 'fixed', value: '' },
     };
 }

@@ -29,9 +29,9 @@ class RunArtifactFilesystem
 
     public function durableDiskName(): string
     {
-        $disk = config('filesystems.puppetflow_storage_disk', 'puppetflow-local');
+        $disk = config('filesystems.app_storage_disk', 'puppetflow-local');
         if (! is_string($disk) || $disk === '') {
-            throw new \UnexpectedValueException('Puppetflow storage disk must be a non-empty string.');
+            throw new \UnexpectedValueException('Application storage disk must be a non-empty string.');
         }
 
         return $disk;

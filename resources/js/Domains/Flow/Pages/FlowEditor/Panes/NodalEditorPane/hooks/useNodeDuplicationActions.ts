@@ -5,7 +5,9 @@ import {
     DEFAULT_INPUT_PORT,
     DEFAULT_OUTPUT_PORT,
 } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/constants';
-import { hasAvailableHandlesForEdge } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/edges';
+import {
+    normalizeStructuredEdges,
+} from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/edges';
 import { snapCanvasPosition } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/grid';
 import { uniqueNodeLabel } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/node';
 import { sanitizeNodeValuesForEntry } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/nodeValues';
@@ -96,37 +98,28 @@ export function useNodeDuplicationActions({
             };
             return [...acc, nextNode];
         }, []);
-        const nextEdges = edges.reduce<CanvasEdge[]>((next, edge) => {
+        const topologyNodes = [...nodes, ...nextNodes];
+        const mappedEdges = edges.flatMap<CanvasEdge>(edge => {
             if (
                 !selectedEditableIds.has(edge.sourceNodeId)
                 || !selectedEditableIds.has(edge.targetNodeId)
-            ) return next;
+            ) return [];
 
             const sourceNodeId = idMap.get(edge.sourceNodeId);
             const targetNodeId = idMap.get(edge.targetNodeId);
-            if (!sourceNodeId || !targetNodeId) return next;
+            if (!sourceNodeId || !targetNodeId) return [];
 
             const sourcePort = edge.sourcePort ?? DEFAULT_OUTPUT_PORT;
             const targetPort = edge.targetPort ?? DEFAULT_INPUT_PORT;
-            if (!hasAvailableHandlesForEdge(
-                next,
+            return [{
+                id: `${sourceNodeId}:${sourcePort}->${targetNodeId}:${targetPort}`,
                 sourceNodeId,
-                sourcePort,
                 targetNodeId,
+                sourcePort,
                 targetPort,
-            )) return next;
-
-            return [
-                ...next,
-                {
-                    id: `${sourceNodeId}:${sourcePort}->${targetNodeId}:${targetPort}`,
-                    sourceNodeId,
-                    targetNodeId,
-                    sourcePort,
-                    targetPort,
-                },
-            ];
-        }, []);
+            }];
+        });
+        const nextEdges = normalizeStructuredEdges(topologyNodes, mappedEdges);
 
         recordHistory();
         setNodes(current => [...current, ...nextNodes]);

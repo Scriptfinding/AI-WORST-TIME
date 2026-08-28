@@ -38,7 +38,7 @@ const $_sendNotification = (() => {
     if (showFlowId && $json.$context.flow_id) tags.push($json.$context.flow_id);
     if (showRunId && $json.$context.run_id) tags.push('Run #' + $json.$context.run_id);
     if (tags.length) {
-      const prefix = tags.join(' · ');
+      const prefix = tags.join(' - ');
       if (provider === 'telegram') {
         message = '<b>' + prefix + '</b>\n' + message;
       } else if (provider === 'discord') {

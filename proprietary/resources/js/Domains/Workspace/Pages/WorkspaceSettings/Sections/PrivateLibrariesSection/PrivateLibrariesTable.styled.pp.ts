@@ -4,6 +4,7 @@ export const Wrapper = styled.div`
     width: 100%;
     max-width: 100%;
     min-width: 0;
+    margin-top: 18px;
     overflow-x: auto;
 `;
 

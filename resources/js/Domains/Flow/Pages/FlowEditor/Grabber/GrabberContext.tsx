@@ -82,10 +82,12 @@ const getChromeRuntime = () => {
 
 export function GrabberProvider({
     children,
-    storeUrl,
+    chromeStoreUrl,
+    firefoxStoreUrl,
 }: {
     children: ReactNode;
-    storeUrl: string;
+    chromeStoreUrl: string;
+    firefoxStoreUrl: string;
 }) {
     const { toast } = useToast();
     const [available, setAvailable] = useState(false);
@@ -287,7 +289,8 @@ export function GrabberProvider({
             {children}
             {showOnboarding && (
                 <GrabberOnboarding
-                    storeUrl={storeUrl}
+                    chromeStoreUrl={chromeStoreUrl}
+                    firefoxStoreUrl={firefoxStoreUrl}
                     onClose={closeOnboarding}
                     onStart={startOnboardingGrab}
                     onDismissFuture={dismissFutureOnboarding}

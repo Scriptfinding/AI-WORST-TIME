@@ -25,6 +25,7 @@ export default function FlowEditorView({
     breadcrumbs,
     siblingFlows,
     canEdit,
+    canManageWorkspaceProxies,
     workspaceProxies,
     personalTree,
     myTriggers,
@@ -152,6 +153,7 @@ export default function FlowEditorView({
                     sidePanelOpen={c.sidePanelOpen}
                     sidePanelWidth={c.sidePanelWidth}
                     canEdit={canEdit}
+                    canManageWorkspaceProxies={canManageWorkspaceProxies}
                     workspaceProxies={workspaceProxies}
                     isNodalFlow={c.isNodalFlow}
                     flow={flow}

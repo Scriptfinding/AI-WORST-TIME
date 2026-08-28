@@ -29,9 +29,9 @@ export interface NodalParamDef {
     picker?: 'selector';
     placeholder?: string;
     defaultValue?: string;
-    valueType?: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'custom-object' | 'getter-map' | 'function-map' | 'function' | 'code' | 'flow' | 'channel' | 'mailbox-watcher' | 'ai-model' | 'ai-vision-model';
+    valueType?: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'custom-object' | 'getter-map' | 'function-map' | 'function' | 'code' | 'flow' | 'channel' | 'mailbox-watcher' | 'ai-model' | 'ai-vision-model' | 'data-table' | 'data-table-values' | 'data-table-filters' | 'data-table-columns';
     required?: boolean;
-    input?: 'text' | 'textarea' | 'code' | 'select' | 'object' | 'custom-object' | 'getter-map' | 'function-map' | 'boolean' | 'number' | 'channel' | 'mailbox-watcher' | 'ai-model' | 'ai-vision-model' | 'tab-name';
+    input?: 'text' | 'textarea' | 'code' | 'select' | 'object' | 'custom-object' | 'getter-map' | 'function-map' | 'boolean' | 'number' | 'channel' | 'mailbox-watcher' | 'ai-model' | 'ai-vision-model' | 'tab-name' | 'data-table' | 'data-table-values' | 'data-table-filters' | 'data-table-columns';
     options?: NodalSelectOption[];
     objectFields?: Record<string, NodalParamDef>;
     requiredOneOf?: string[][];
@@ -81,6 +81,7 @@ export interface FlowEditorProps {
     breadcrumbs: Breadcrumb[];
     siblingFlows: Pick<Flow, 'id' | 'name' | 'icon_type' | 'icon_value' | 'icon_color' | 'icon_url' | 'library_reference'>[];
     canEdit: boolean;
+    canManageWorkspaceProxies: boolean;
     workspaceProxies: Pick<WorkspaceProxy, 'id' | 'label' | 'scheme' | 'host' | 'port'>[];
     myTriggers: FlowTrigger[];
     myActions: FlowAction[];

@@ -91,7 +91,7 @@ export function useNodeCrudActions({
 
         recordHistory();
         setNodes(current => current.filter(node => !removableIds.has(node.id)));
-        setEdges(current => reconnectDeletedLinearNodes(current, removableIds));
+        setEdges(current => reconnectDeletedLinearNodes(nodes, current, removableIds));
         setSelectedNodeIds(current => new Set(
             [...current].filter(nodeId => !removableIds.has(nodeId)),
         ));

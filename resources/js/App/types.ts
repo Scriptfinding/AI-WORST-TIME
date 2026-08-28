@@ -24,7 +24,8 @@ export interface AppSettings {
     magic_link_enabled: boolean;
     server_timezone?: string;
     max_flow_timeout_seconds: number;
-    grabber_store_url: string;
+    grabber_chrome_store_url: string;
+    grabber_firefox_store_url: string;
     queues_counter: number;
     snippets_enabled: boolean;
     variables_enabled: boolean;

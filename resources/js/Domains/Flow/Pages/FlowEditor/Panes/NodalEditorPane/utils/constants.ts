@@ -8,6 +8,13 @@ export const STICKY_NOTE_NODE_NAME = '__sticky_note';
 export const CODE_NODE_VALUE_KEY = 'code';
 export const NODE_RUN_OUTPUT_KEY = '__runOutputKey';
 export const IF_ELSE_NODE_NAME = 'If / Else';
+export const DATA_TABLE_ROW_EXISTS_NODE_NAME = '$dataTableRowExists';
+export const DATA_TABLE_ROW_DOES_NOT_EXIST_NODE_NAME = '$dataTableRowDoesNotExist';
+export const isConditionalBranchNodeName = (name: string): boolean => (
+    name === IF_ELSE_NODE_NAME
+    || name === DATA_TABLE_ROW_EXISTS_NODE_NAME
+    || name === DATA_TABLE_ROW_DOES_NOT_EXIST_NODE_NAME
+);
 export const LOOP_NODE_NAME = 'Loop';
 export const MERGE_NODE_NAME = 'Merge';
 export const NO_OP_NODE_NAME = 'No-op';
@@ -360,6 +367,17 @@ export const NODE_ICON_BY_NAME: Record<string, string> = {
     $pdfSearch: 'lucide:file-search',
     $notify: 'lucide:bell',
     $waitForEmail: 'lucide:mail-search',
+    $dataTableInsertRow: 'lucide:list-plus',
+    $dataTableUpdateRows: 'lucide:list-restart',
+    $dataTableUpsertRows: 'lucide:list-plus',
+    $dataTableRowExists: 'lucide:list-check',
+    $dataTableRowDoesNotExist: 'lucide:list-x',
+    $dataTableGetRows: 'lucide:search',
+    $dataTableDeleteRows: 'lucide:trash-2',
+    $dataTableCreate: 'lucide:table-properties',
+    $dataTableDelete: 'lucide:trash-2',
+    $dataTableList: 'lucide:library',
+    $dataTableUpdate: 'lucide:table-properties',
     $input: 'lucide:braces',
     $page: 'lucide:panel-top',
     $client: 'lucide:plug',
@@ -379,6 +397,7 @@ export const NODE_ICON_BY_CATEGORY: Record<string, string> = {
     Response: 'lucide:message-square-reply',
     Notification: 'lucide:bell',
     Mailbox: 'lucide:mail-search',
+    'Data Tables': 'lucide:table-properties',
     Cookies: 'lucide:cookie',
     Globals: 'lucide:globe-2',
     Control: 'lucide:git-branch',

@@ -71,7 +71,7 @@ export function registerChannelCompletions(monaco: Parameters<OnMount>[1], model
 
             const suggestions = channels.map(channel => idCompletionItem(channel, {
                 kind: monaco.languages.CompletionItemKind.Value,
-                detail: `${providerIcons[channel.provider] || channel.provider} · ${channel.scope} · ${channel.id}`,
+                detail: `${providerIcons[channel.provider] || channel.provider} - ${channel.scope} - ${channel.id}`,
                 documentation: `${channel.name}\n$notify("${channel.id}", "message")`,
                 range,
             }));

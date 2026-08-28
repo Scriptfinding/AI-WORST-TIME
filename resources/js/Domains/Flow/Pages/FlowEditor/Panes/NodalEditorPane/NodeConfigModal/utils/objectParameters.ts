@@ -50,6 +50,14 @@ const inferCustomFieldType = (value: unknown): IfConditionCategory => {
     return 'string';
 };
 
+const objectFieldValueType = (meta: NodalParamDef, key: string): ObjectFieldValueType | undefined => {
+    const valueType = meta.objectFields?.[key]?.valueType;
+
+    return ['string', 'number', 'dateTime', 'boolean', 'array', 'object', 'code'].includes(valueType ?? '')
+        ? valueType as ObjectFieldValueType
+        : undefined;
+};
+
 const isPureExpressionTemplate = (value: string) => /^\s*\{\{[\s\S]*\}\}\s*$/.test(value);
 
 const hasExpressionTemplate = (value: string) => /\{\{[\s\S]*?\}\}/.test(value);
@@ -182,7 +190,7 @@ const jsonObjectToFields = (jsonObject: Record<string, unknown>, meta: NodalPara
                 ? 'code' as const
                 : customField
                     ? inferCustomFieldType(value)
-                    : undefined;
+                    : objectFieldValueType(meta, key);
 
             return [{
                 id: `${customField ? 'custom' : 'known'}-${key}`,
@@ -241,7 +249,12 @@ export function getObjectFields(value: ObjectNodeParameterValue, meta: NodalPara
             && knownKeys.includes(field.key)
             && meta.objectFields?.[field.key]?.valueType !== 'flow'
         )))
-        .map(field => isFunctionMap(meta) ? { ...field, valueType: 'code' as const } : field);
+        .map(field => ({
+            ...field,
+            valueType: isFunctionMap(meta)
+                ? 'code' as const
+                : field.valueType ?? objectFieldValueType(meta, field.key),
+        }));
     const requiredKeys = knownKeys.filter(key => (
         meta.objectFields?.[key]?.required
         && meta.objectFields?.[key]?.valueType !== 'flow'
@@ -255,6 +268,7 @@ export function getObjectFields(value: ObjectNodeParameterValue, meta: NodalPara
         .map(key => ({
             id: `known-${key}`,
             key,
+            valueType: objectFieldValueType(meta, key),
             value: createEmptyFieldValue(meta.objectFields?.[key]),
         }));
 
@@ -323,6 +337,7 @@ export function prependKnownObjectField(
             {
                 id: `known-${key}`,
                 key,
+                valueType: objectFieldValueType(meta, key),
                 value: createEmptyFieldValue(meta.objectFields?.[key]),
             },
             ...fields,

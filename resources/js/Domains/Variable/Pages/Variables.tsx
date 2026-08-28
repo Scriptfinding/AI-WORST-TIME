@@ -76,7 +76,7 @@ export default function Variables({ variables, editingVariable, groups, teams, f
                     items={selectedVariables.map(variable => ({
                         id: variable.id,
                         title: variable.key,
-                        subtitle: `${variable.type} · ${variable.scope}`,
+                        subtitle: `${variable.type} - ${variable.scope}`,
                         icon: <Icon icon={variable.type === 'secret' ? 'lucide:key-round' : 'lucide:braces'} width={22} height={22} />,
                     }))}
                 />

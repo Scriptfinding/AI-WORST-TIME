@@ -50,12 +50,55 @@ export const OperatorMenu = styled.div`
     right: 0;
     width: min(360px, 82vw);
     max-height: 320px;
-    overflow: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     padding: 8px;
     border-radius: ${({ theme }) => theme.radius.md};
     border: 1px solid ${({ theme }) => theme.colors.border.default};
     background: ${({ theme }) => theme.colors.bg.primary};
     box-shadow: ${({ theme }) => theme.shadow.lg};
+`;
+
+export const OperatorSearch = styled.div`
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 9px;
+    border-radius: ${({ theme }) => theme.radius.sm};
+    border: 1px solid ${({ theme }) => theme.colors.border.default};
+    color: ${({ theme }) => theme.colors.text.tertiary};
+    background: ${({ theme }) => theme.colors.bg.secondary};
+
+    &:focus-within {
+        border-color: ${({ theme }) => theme.colors.border.light};
+    }
+
+    svg {
+        flex-shrink: 0;
+    }
+
+    input {
+        min-width: 0;
+        width: 100%;
+        padding: 8px 0;
+        border: 0;
+        outline: 0;
+        color: ${({ theme }) => theme.colors.text.primary};
+        font-size: 12px;
+        background: transparent;
+
+        &::placeholder {
+            color: ${({ theme }) => theme.colors.text.tertiary};
+        }
+    }
+`;
+
+export const OperatorGroups = styled.div`
+    min-height: 0;
+    overflow: auto;
 `;
 
 export const OperatorGroup = styled.div`
@@ -82,6 +125,13 @@ export const OperatorGroupLabel = styled.div`
     letter-spacing: 0.04em;
 `;
 
+export const OperatorEmpty = styled.div`
+    padding: 18px 10px;
+    color: ${({ theme }) => theme.colors.text.tertiary};
+    font-size: 11px;
+    text-align: center;
+`;
+
 export const OperatorOption = styled.button`
     width: 100%;
     min-width: 0;
@@ -96,8 +146,13 @@ export const OperatorOption = styled.button`
     cursor: pointer;
 
     &:hover,
-    &[data-active='true'] {
+    &[data-active='true'],
+    &[data-selected='true'] {
         background: ${({ theme }) => theme.colors.bg.hover};
+    }
+
+    &[data-selected='true'] {
+        font-weight: 700;
     }
 
     span {

@@ -10,6 +10,7 @@ use App\Http\Controllers\Integration\Repository\RepositoryWebhookController;
 use App\Http\Controllers\Internal\MailboxRunMessageController;
 use App\Http\Controllers\Internal\RunnerSignalController;
 use App\Http\Controllers\Internal\RuntimeAiController;
+use App\Http\Controllers\Internal\RuntimeDataTableController;
 use App\Http\Controllers\Mcp\McpServerController;
 use App\Http\Controllers\Trigger\TriggerIncomingController;
 use App\Http\Middleware\AuthenticateRunnerCapability;
@@ -39,6 +40,15 @@ Route::prefix('internal/runner')
         Route::post('ai/execute', [RuntimeAiController::class, 'execute'])
             ->middleware(AuthenticateRunnerCapability::class.':'.RunnerCapabilityService::SCOPE_AI_EXECUTE)
             ->name('ai.execute');
+        Route::post('data-table/read', [RuntimeDataTableController::class, 'read'])
+            ->middleware(AuthenticateRunnerCapability::class.':'.RunnerCapabilityService::SCOPE_DATA_TABLE_READ)
+            ->name('data-table.read');
+        Route::post('data-table/write', [RuntimeDataTableController::class, 'write'])
+            ->middleware(AuthenticateRunnerCapability::class.':'.RunnerCapabilityService::SCOPE_DATA_TABLE_WRITE)
+            ->name('data-table.write');
+        Route::post('data-table/schema', [RuntimeDataTableController::class, 'schema'])
+            ->middleware(AuthenticateRunnerCapability::class.':'.RunnerCapabilityService::SCOPE_DATA_TABLE_SCHEMA)
+            ->name('data-table.schema');
         Route::post('waiting/declare', [RunnerSignalController::class, 'declareWaiting'])
             ->middleware(AuthenticateRunnerCapability::class.':'.RunnerCapabilityService::SCOPE_WAITING_DECLARE)
             ->name('waiting.declare');

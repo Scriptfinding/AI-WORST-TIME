@@ -65,10 +65,14 @@ export function useGraphSynchronization({
         [edges, nodes],
     );
     const lastPublishedGraphRef = useRef(JSON.stringify(currentGraph));
-    const generatedCode = useMemo(
-        () => compileNodalGraphToCode(currentGraph, { context: graphContext, functionArguments }),
-        [currentGraph, functionArguments, graphContext],
-    );
+    const generatedCode = useMemo(() => {
+        try {
+            return compileNodalGraphToCode(currentGraph, { context: graphContext, functionArguments });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'The visual flow cannot be compiled.';
+            return `// ${message}`;
+        }
+    }, [currentGraph, functionArguments, graphContext]);
 
     useEffect(() => {
         const serializedGraph = JSON.stringify(currentGraph);

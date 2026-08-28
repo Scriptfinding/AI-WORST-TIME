@@ -1,4 +1,8 @@
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
+
+const spin = keyframes`
+    to { transform: rotate(360deg); }
+`;
 
 export const Actions = styled.div`
     display: flex;
@@ -27,13 +31,26 @@ export const OverflowButton = styled.button`
         background: ${({ theme }) => theme.colors.bg.hover};
         color: ${({ theme }) => theme.colors.text.primary};
     }
+
+    &:disabled {
+        opacity: 1;
+        cursor: wait;
+        color: ${({ theme }) => theme.colors.accent.primary};
+    }
+`;
+
+export const Spinner = styled.span`
+    width: 15px;
+    height: 15px;
+    border: 2px solid ${({ theme }) => theme.colors.border.default};
+    border-top-color: ${({ theme }) => theme.colors.accent.primary};
+    border-radius: 50%;
+    animation: ${spin} 0.7s linear infinite;
 `;
 
 export const OverflowMenu = styled.div`
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    z-index: 2000;
+    position: fixed;
+    z-index: 10000;
     min-width: 150px;
     border: 1px solid ${({ theme }) => theme.colors.border.default};
     border-radius: ${({ theme }) => theme.radius.md};
@@ -42,7 +59,7 @@ export const OverflowMenu = styled.div`
     padding: 6px;
 `;
 
-export const DangerMenuItem = styled.button`
+export const MenuItem = styled.button`
     width: 100%;
     display: flex;
     align-items: center;
@@ -50,9 +67,19 @@ export const DangerMenuItem = styled.button`
     border-radius: ${({ theme }) => theme.radius.sm};
     padding: 8px 10px;
     font-size: 12px;
+    color: ${({ theme }) => theme.colors.text.secondary};
+
+    &:hover {
+        background: ${({ theme }) => theme.colors.bg.hover};
+        color: ${({ theme }) => theme.colors.text.primary};
+    }
+`;
+
+export const DangerMenuItem = styled(MenuItem)`
     color: ${({ theme }) => theme.colors.accent.error};
 
     &:hover {
         background: ${({ theme }) => theme.colors.accent.errorBg};
+        color: ${({ theme }) => theme.colors.accent.error};
     }
 `;

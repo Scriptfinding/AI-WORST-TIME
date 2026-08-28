@@ -11,6 +11,7 @@ interface UseMonacoDecorationsOptions {
     decorations: editor.IModelDeltaDecoration[];
     line?: number | null;
     reveal?: MonacoRevealOptions;
+    revealKey?: string | number;
 }
 
 // Applies validated decorations to a Monaco model and optionally reveals their target line.
@@ -20,8 +21,10 @@ export function useMonacoDecorations({
     decorations,
     line = null,
     reveal,
+    revealKey,
 }: UseMonacoDecorationsOptions) {
     const decorationsRef = useRef<editor.IEditorDecorationsCollection | null>(null);
+    const revealedKeyRef = useRef<string | number | null>(null);
 
     useEffect(() => {
         if (!editorInstance || !model) return;
@@ -35,15 +38,21 @@ export function useMonacoDecorations({
             decoration.range.startLineNumber >= 1
             && decoration.range.endLineNumber <= maxLine);
         const revealLine = () => {
-            if (line != null && line >= 1 && line <= maxLine) {
-                editorInstance.revealLineInCenterIfOutsideViewport(line);
-            }
+            if (
+                line == null
+                || line < 1
+                || line > maxLine
+                || (revealKey != null && revealedKeyRef.current === revealKey)
+            ) return;
+
+            editorInstance.revealLineInCenterIfOutsideViewport(line);
+            if (revealKey != null) revealedKeyRef.current = revealKey;
         };
 
         if (reveal?.timing === 'beforeDecorations') revealLine();
         collection.set(validDecorations);
         if (reveal?.timing === 'afterDecorations') revealLine();
-    }, [decorations, editorInstance, line, model, reveal]);
+    }, [decorations, editorInstance, line, model, reveal, revealKey]);
 
     useEffect(() => () => {
         decorationsRef.current?.clear();

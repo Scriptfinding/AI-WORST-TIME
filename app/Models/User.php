@@ -114,6 +114,7 @@ class User extends Authenticatable implements OAuthenticatable
             }
             $runs = $ownedFlows->flatMap(fn (Flow $flow) => $flow->runs);
 
+            $user->dataTables->each->delete();
             $ownedFlows->each->delete();
             DB::afterCommit(function () use ($user, $runs): void {
                 app(ArtifactCleanupService::class)->deleteUserArtifacts($user, $runs);
@@ -179,6 +180,12 @@ class User extends Authenticatable implements OAuthenticatable
     public function ownedFlows(): HasMany
     {
         return $this->hasMany(Flow::class, 'owner_id');
+    }
+
+    /** @return HasMany<DataTable, $this> */
+    public function dataTables(): HasMany
+    {
+        return $this->hasMany(DataTable::class);
     }
 
     /** @return HasMany<ApiKey, $this> */

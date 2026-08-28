@@ -48,11 +48,11 @@ export default function RegistrationRequestsPanel<T extends RegistrationRequestI
                             <S.Email>{request.email}</S.Email>
                         </S.Identity>
                         <S.Status $verified={Boolean(request.email_verified_at)}>
-                            {originLabels[request.origin]} ·
+                            {originLabels[request.origin]},
                             {request.email_verified_at && (
                                 <>
                                     <Icon icon="lucide:badge-check" width={12} height={12} />
-                                    Email verified ·
+                                    Email verified,
                                 </>
                             )}
                             {formatDate(request.created_at)}

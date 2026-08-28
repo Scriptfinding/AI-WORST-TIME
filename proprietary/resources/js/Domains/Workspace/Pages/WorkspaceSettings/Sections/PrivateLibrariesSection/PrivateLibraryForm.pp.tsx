@@ -11,6 +11,7 @@ import * as S from '@proprietary/Domains/Workspace/Pages/WorkspaceSettings/Secti
 
 interface Props {
     isOpen: boolean;
+    editing?: boolean;
     values: PrivateLibraryFormValues;
     groups: string[];
     teams: TeamOption[];
@@ -23,6 +24,7 @@ interface Props {
 
 export default function PrivateLibraryForm({
     isOpen,
+    editing = false,
     values,
     groups,
     teams,
@@ -41,8 +43,10 @@ export default function PrivateLibraryForm({
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title="Add private library"
-            caption="Add a GitHub repository that follows the Puppetflow library structure."
+            title={editing ? 'Edit private library' : 'Add private library'}
+            caption={editing
+                ? 'Update this private library and its repository settings.'
+                : 'Add a GitHub repository that follows the Puppetflow library structure.'}
             width="560px"
         >
             <S.Form onSubmit={handleSubmit}>
@@ -99,8 +103,8 @@ export default function PrivateLibraryForm({
                         loading={saving}
                         disabled={!values.label.trim() || !values.url.trim() || !values.branch.trim()}
                     >
-                        <Icon icon="lucide:plus" width={14} />
-                        Add library
+                        <Icon icon={editing ? 'lucide:save' : 'lucide:plus'} width={14} />
+                        {editing ? 'Save library' : 'Add library'}
                     </Button>
                 </S.Actions>
             </S.Form>

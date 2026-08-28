@@ -1,12 +1,11 @@
 import type React from 'react';
 import { useCallback, useRef } from 'react';
 import {
-    DEFAULT_INPUT_PORT,
     DEFAULT_OUTPUT_PORT,
 } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/constants';
 import {
     collectDownstreamNodeIds,
-    edgeConflictsWithHandles,
+    insertNodeIntoEdge,
     type EdgeDropTarget,
 } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/edges';
 import { snapCanvasPosition } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/grid';
@@ -169,10 +168,36 @@ export function useCanvasNodeDragInteractions({
 
         if (dropTarget) {
             const targetEdge = edges.find(edge => edge.id === dropTarget.edgeId);
+            if (!targetEdge) {
+                nodeDragRef.current = null;
+                constrainedDragAxisRef.current = null;
+                setEdgeDropTarget(null);
+                if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                    event.currentTarget.releasePointerCapture(event.pointerId);
+                }
+                return true;
+            }
             const insertedOutputPort = draggedNode
                 ? primaryNodeOutputPort(draggedNode) ?? DEFAULT_OUTPUT_PORT
                 : DEFAULT_OUTPUT_PORT;
-            const shiftedNodeIds = targetEdge && dropTarget.targetShift && (dropTarget.targetShift.x || dropTarget.targetShift.y)
+            const preparedEdges = insertNodeIntoEdge(
+                nodes,
+                edges,
+                targetEdge,
+                nodeDrag.nodeId,
+                insertedOutputPort,
+            );
+            if (preparedEdges === edges) {
+                nodeDragRef.current = null;
+                constrainedDragAxisRef.current = null;
+                setEdgeDropTarget(null);
+                if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                    event.currentTarget.releasePointerCapture(event.pointerId);
+                }
+                return true;
+            }
+
+            const shiftedNodeIds = dropTarget.targetShift && (dropTarget.targetShift.x || dropTarget.targetShift.y)
                 ? collectDownstreamNodeIds(
                     edges,
                     dropTarget.targetNodeId,
@@ -189,33 +214,7 @@ export function useCanvasNodeDragInteractions({
                     y: snapCanvasPosition(node.y + dropTarget.targetShift.y),
                 };
             }));
-
-            setEdges(current => {
-                const currentTargetEdge = current.find(edge => edge.id === dropTarget.edgeId);
-                if (!currentTargetEdge) return current;
-                const sourcePort = currentTargetEdge.sourcePort ?? DEFAULT_OUTPUT_PORT;
-                const targetPort = currentTargetEdge.targetPort ?? DEFAULT_INPUT_PORT;
-
-                return [
-                    ...current.filter(edge => edge.id !== currentTargetEdge.id
-                        && !edgeConflictsWithHandles(edge, currentTargetEdge.sourceNodeId, sourcePort, nodeDrag.nodeId, DEFAULT_INPUT_PORT)
-                        && !edgeConflictsWithHandles(edge, nodeDrag.nodeId, insertedOutputPort, currentTargetEdge.targetNodeId, targetPort)),
-                    {
-                        id: `${currentTargetEdge.sourceNodeId}:${sourcePort}->${nodeDrag.nodeId}:${DEFAULT_INPUT_PORT}`,
-                        sourceNodeId: currentTargetEdge.sourceNodeId,
-                        targetNodeId: nodeDrag.nodeId,
-                        sourcePort,
-                        targetPort: DEFAULT_INPUT_PORT,
-                    },
-                    {
-                        id: `${nodeDrag.nodeId}:${insertedOutputPort}->${currentTargetEdge.targetNodeId}:${targetPort}`,
-                        sourceNodeId: nodeDrag.nodeId,
-                        targetNodeId: currentTargetEdge.targetNodeId,
-                        sourcePort: insertedOutputPort,
-                        targetPort,
-                    },
-                ];
-            });
+            setEdges(preparedEdges);
         }
 
         nodeDragRef.current = null;

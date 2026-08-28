@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { IntegrationProvider } from '@/Domains/Integration/types';
 import { getProviderConfig } from '@/Domains/Integration/Pages/providerConfig';
-import { getVisibilityMeta } from '@/Shared/Utils/visibility';
+import { formatVisibility, getVisibilityMeta } from '@/Shared/Utils/visibility';
+import { DATA_TYPE_ICONS } from '@/Shared/Utils/dataTypeIcons';
 import {
     fetchAiModelSuggestions,
     type AiModelSuggestion,
@@ -14,6 +15,10 @@ import {
     fetchMailboxWatcherSuggestions,
     type WatcherSuggestion,
 } from '@/Domains/Flow/Pages/FlowEditor/utils/mailboxWatcherSuggestions';
+import {
+    fetchDataTableSuggestions,
+    type DataTableSuggestion,
+} from '@/Domains/Flow/Pages/FlowEditor/utils/dataTableSuggestions';
 import type { ResourceFieldValueType } from '@/Domains/Flow/Pages/FlowEditor/components/StructuredObjectInput/utils';
 
 interface FlowInputResourceSelectProps {
@@ -35,6 +40,7 @@ export default function FlowInputResourceSelect({
     const [aiModels, setAiModels] = useState<AiModelSuggestion[]>([]);
     const [channels, setChannels] = useState<ChannelSuggestion[]>([]);
     const [watchers, setWatchers] = useState<WatcherSuggestion[]>([]);
+    const [dataTables, setDataTables] = useState<DataTableSuggestion[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const aiModelOptions = useMemo(() => aiModels.map(model => {
@@ -44,12 +50,24 @@ export default function FlowInputResourceSelect({
         return {
             value: String(model.id),
             label: model.name,
-            detail: visibility ? `${visibility.label} · ${model.ai_model_id}` : model.ai_model_id,
+            detail: visibility ? `${visibility.label} - ${model.ai_model_id}` : model.ai_model_id,
             detailIcon: visibility?.icon,
             icon: provider?.icon,
             iconColor: provider?.color,
         };
     }), [aiModels]);
+    const dataTableOptions = useMemo(() => dataTables.map(table => {
+        const visibility = getVisibilityMeta(table.visibility);
+        const columnLabel = `${table.columns.length} column${table.columns.length === 1 ? '' : 's'}`;
+
+        return {
+            value: String(table.id),
+            label: table.name,
+            detail: `${visibility?.label ?? (formatVisibility(table.visibility) || 'Private')} - ${columnLabel}`,
+            detailIcon: visibility?.icon,
+            icon: DATA_TYPE_ICONS.datatable,
+        };
+    }), [dataTables]);
 
     const loadSuggestions = useCallback(async (force = false) => {
         if (force) setRefreshing(true);
@@ -61,6 +79,8 @@ export default function FlowInputResourceSelect({
                 setChannels(await fetchChannelSuggestions(force));
             } else if (type === 'mailbox-watcher') {
                 setWatchers(await fetchMailboxWatcherSuggestions(flowId, force));
+            } else if (type === 'datatable') {
+                setDataTables(await fetchDataTableSuggestions(flowId, force));
             }
         } finally {
             if (force) setRefreshing(false);
@@ -72,18 +92,20 @@ export default function FlowInputResourceSelect({
         void loadSuggestions();
     }, [loadSuggestions]);
 
-    if (type === 'ai-model') {
+    if (type === 'ai-model' || type === 'datatable') {
+        const isDataTable = type === 'datatable';
+
         return (
             <CustomSelect
                 value={value}
                 disabled={readOnly}
                 loading={loading}
-                options={aiModelOptions}
+                options={isDataTable ? dataTableOptions : aiModelOptions}
                 searchThreshold={0}
-                placeholder="Select an AI model..."
+                placeholder={isDataTable ? 'Select a Data Table...' : 'Select an AI model...'}
                 showOptionValue={false}
                 dropdownMinWidth={320}
-                actionSlot={{
+                actionSlot={isDataTable ? undefined : {
                     label: '+ Add AI Model',
                     onAction: async () => {
                         const model = await quickRequirementCreation.create('ai-model', {

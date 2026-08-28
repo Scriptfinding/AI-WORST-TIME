@@ -18,6 +18,7 @@ interface FlowEditorSidePanelProps {
     sidePanelOpen: boolean;
     sidePanelWidth: number;
     canEdit: boolean;
+    canManageWorkspaceProxies: boolean;
     workspaceProxies: FlowEditorProps['workspaceProxies'];
     isNodalFlow: boolean;
     flow: FlowEditorProps['flow'];
@@ -53,6 +54,7 @@ export default function FlowEditorSidePanel({
     sidePanelOpen,
     sidePanelWidth,
     canEdit,
+    canManageWorkspaceProxies,
     workspaceProxies,
     isNodalFlow,
     flow,
@@ -186,6 +188,8 @@ export default function FlowEditorSidePanel({
                 <SettingsPane
                     flow={flow}
                     workspaceProxies={workspaceProxies}
+                    teams={teams}
+                    canManageWorkspaceProxies={canManageWorkspaceProxies}
                     scrollTo={settingsScrollToRef.current}
                     onScrollHandled={() => { settingsScrollToRef.current = null; }}
                     onDirtyChange={onSettingsDirtyChange}

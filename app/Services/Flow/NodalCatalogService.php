@@ -43,6 +43,7 @@ final class NodalCatalogService
             }
 
             $flowParameters = $this->flowParameters($body);
+            $declaredPorts = $this->declaredFlowPorts($body);
             $entries[] = [
                 'name' => $name,
                 'signature' => $signature,
@@ -53,7 +54,9 @@ final class NodalCatalogService
                 'flowParameters' => $flowParameters,
                 'ports' => [
                     'input' => ['input'],
-                    'output' => ['output', ...array_column($flowParameters, 'portId')],
+                    'output' => $declaredPorts !== []
+                        ? $declaredPorts
+                        : ['output', ...array_column($flowParameters, 'portId')],
                 ],
             ];
         }
@@ -160,6 +163,18 @@ final class NodalCatalogService
         }
 
         return $parameters;
+    }
+
+    /** @return list<string> */
+    private function declaredFlowPorts(string $body): array
+    {
+        preg_match_all(
+            '/@nodal-flow-port\s+([a-zA-Z_$][\w$-]*)\s+\[(?:continuation|branch|callback)\]\s*:\s*[^\n]+/',
+            $body,
+            $matches,
+        );
+
+        return array_values(array_unique($matches[1]));
     }
 
     /**

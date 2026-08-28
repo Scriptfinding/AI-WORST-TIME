@@ -286,6 +286,17 @@ const NODE_LABEL_BY_NAME: Record<string, string> = {
     $aiMessage: 'AI Message',
     $aiControl: 'AI Control',
     $httpRequest: 'HTTP Request',
+    $dataTableInsertRow: 'Insert Row',
+    $dataTableUpdateRows: 'Update Row(s)',
+    $dataTableUpsertRows: 'Upsert Row(s)',
+    $dataTableRowExists: 'If Row Exists',
+    $dataTableRowDoesNotExist: 'If Row Does Not Exist',
+    $dataTableGetRows: 'Get Row(s)',
+    $dataTableDeleteRows: 'Delete Row(s)',
+    $dataTableCreate: 'Create Data Table',
+    $dataTableDelete: 'Delete Data Table',
+    $dataTableList: 'List Data Tables',
+    $dataTableUpdate: 'Update Data Table',
 };
 
 export const formatNodeLabel = (name: string) => {

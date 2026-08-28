@@ -162,7 +162,7 @@ export default function AiModels({ aiModels, groups, aiIntegrations, teams, filt
                         title: model.name,
                         subtitle: usages[index].length > 0
                             ? `Used in ${usages[index].length} flow(s)`
-                            : `${model.ai_integration?.name ?? 'AI integration'} · ${model.ai_model_id}`,
+                            : `${model.ai_integration?.name ?? 'AI integration'} - ${model.ai_model_id}`,
                         icon: <Icon icon="lucide:bot" width={21} />,
                     }))}
                     warning={usageCount > 0

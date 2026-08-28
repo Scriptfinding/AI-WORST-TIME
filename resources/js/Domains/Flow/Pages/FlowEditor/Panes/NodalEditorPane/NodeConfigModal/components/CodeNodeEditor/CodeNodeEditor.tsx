@@ -5,6 +5,7 @@ import { useSyncMonacoValue } from '@/Shared/CodeEditor/hooks/useSyncMonacoValue
 import { useThemeMode } from '@/App/Hooks/useThemeMode';
 import { registerAiModelCompletions } from '@/Domains/Flow/Pages/FlowEditor/utils/aiModelSuggestions';
 import { registerChannelCompletions } from '@/Domains/Flow/Pages/FlowEditor/utils/channelSuggestions';
+import { registerDataTableCompletions } from '@/Domains/Flow/Pages/FlowEditor/utils/dataTableSuggestions';
 import { registerCompletions } from '@/Domains/Flow/Pages/FlowEditor/utils/monacoBase';
 import { registerNodalAutocompleteCompletions } from '@/Domains/Flow/Pages/FlowEditor/utils/inputCompletions';
 import { registerReferenceLabelDecorations } from '@/Domains/Flow/Pages/FlowEditor/utils/referenceLabelDecorations';
@@ -37,6 +38,7 @@ interface CodeNodeEditorProps {
     value: string;
     outputData: unknown;
     autocompleteContext: NodalAutocompleteContext;
+    flowId?: Id;
     readOnly?: boolean;
     onChange: (value: string) => void;
 }
@@ -45,6 +47,7 @@ export default function CodeNodeEditor({
     value,
     outputData,
     autocompleteContext,
+    flowId,
     readOnly,
     onChange,
 }: CodeNodeEditorProps) {
@@ -68,10 +71,11 @@ export default function CodeNodeEditor({
             registerNodalAutocompleteCompletions(monaco, { ...autocompleteContext, outputData }, modelUri),
             registerAiModelCompletions(monaco, modelUri),
             registerChannelCompletions(monaco, modelUri),
+            ...(flowId ? [registerDataTableCompletions(monaco, flowId, modelUri)] : []),
             registerSnippetCompletions(monaco, modelUri),
             registerTabNameCompletions(monaco, modelUri, autocompleteContext.tabNames),
         ];
-    }, [autocompleteContext, outputData]);
+    }, [autocompleteContext, flowId, outputData]);
 
     useEffect(() => {
         if (!monacoRef.current) return;
@@ -82,7 +86,7 @@ export default function CodeNodeEditor({
         editorRef.current = editorInstance;
         monacoRef.current = monaco;
         registerEditorCompletions(monaco);
-        registerReferenceLabelDecorations(editorInstance, monaco);
+        registerReferenceLabelDecorations(editorInstance, monaco, { flowId });
     };
 
     return (

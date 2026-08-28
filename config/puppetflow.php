@@ -22,18 +22,18 @@ return [
 
     'queues_counter' => max(1, (int) env('APP_QUEUES_COUNTER', 1)),
 
-    'node_http_request_allow_private' => filter_var(
-        env('PUPPETFLOW_NODE_HTTP_REQUEST_ALLOW_PRIVATE', false),
+    'runner_http_request_allow_private' => filter_var(
+        env('RUNNER_HTTP_REQUEST_ALLOW_PRIVATE', false),
         FILTER_VALIDATE_BOOL,
     ),
 
     'integration_http_allow_private' => filter_var(
-        env('PUPPETFLOW_INTEGRATION_HTTP_ALLOW_PRIVATE', true),
+        env('INTEGRATION_HTTP_ALLOW_PRIVATE', true),
         FILTER_VALIDATE_BOOL,
     ),
 
     'integration_http_allow_http' => filter_var(
-        env('PUPPETFLOW_INTEGRATION_HTTP_ALLOW_HTTP', true),
+        env('INTEGRATION_HTTP_ALLOW_HTTP', true),
         FILTER_VALIDATE_BOOL,
     ),
 
@@ -55,9 +55,10 @@ return [
         (int) env('REPOSITORY_WEBHOOK_MAX_PAYLOAD_BYTES', 10485760),
     ),
 
-    'grabber_store_url' => env('PUPPETFLOW_GRABBER_STORE_URL', 'https://chromewebstore.google.com/detail/puppetflow-grabber/behdpfaljjpaeekihhnjfhfhigfbkjdc'),
+    'grabber_chrome_store_url' => env('GRABBER_CHROME_STORE_URL', 'https://chromewebstore.google.com/detail/puppetflow-grabber/behdpfaljjpaeekihhnjfhfhigfbkjdc'),
+    'grabber_firefox_store_url' => env('GRABBER_FIREFOX_STORE_URL', 'https://addons.mozilla.org/firefox/addon/puppetflow-grabber/'),
 
-    'blueprints_api_url' => env('PUPPETFLOW_BLUEPRINTS_API_URL', 'https://puppetflow.com/api/blueprints'),
+    'blueprints_api_url' => env('BLUEPRINTS_API_URL', 'https://puppetflow.com/api/blueprints'),
 
     'feature_flags' => [
         'snippets_enabled' => filter_var(env('FF_SNIPPETS_ENABLED', true), FILTER_VALIDATE_BOOL),

@@ -74,7 +74,7 @@ export default function RegistrationRequests({ requests, workspaces }: Props) {
                     form.reset();
                 }}
                 title="Approve invitation request"
-                caption={selected ? `${selected.name} · ${selected.email}` : undefined}
+                caption={selected ? `${selected.name} - ${selected.email}` : undefined}
                 footer={
                     <>
                         <Button variant="secondary" onClick={() => setSelected(null)}>Cancel</Button>

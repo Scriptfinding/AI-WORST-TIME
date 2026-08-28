@@ -62,6 +62,8 @@ export default function MobileCodeSnapshot({
                                     preview.visualProgress.activeNodeId,
                                 ]),
                             nodePassCounts: preview.visualProgress.nodePassCounts,
+                            passedEdgeIds: preview.visualProgress.passedEdgeIds,
+                            edgePassCounts: preview.visualProgress.edgePassCounts,
                             errorNodeId: preview.isErrorRun ? preview.visualProgress.activeNodeId : null,
                             activeLine: preview.activeLine,
                             passedLines: preview.passedLines,
@@ -76,6 +78,7 @@ export default function MobileCodeSnapshot({
                 </DataPanelLoader>
             ) : run.code_snapshot ? (
                 <CodeSnapshotEditor
+                    runId={run.id}
                     code={run.code_snapshot}
                     resolvedTheme={resolvedTheme}
                     activeLine={preview.activeLine}

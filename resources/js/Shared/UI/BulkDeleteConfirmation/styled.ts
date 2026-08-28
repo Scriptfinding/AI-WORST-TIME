@@ -27,9 +27,7 @@ export const SelectionHeader = styled.div`
     border-bottom: 1px solid ${({ theme }) => theme.colors.border.default};
     color: ${({ theme }) => theme.colors.text.tertiary};
     font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.055em;
-    text-transform: uppercase;
+    font-weight: 600;
 `;
 
 export const Count = styled.span`

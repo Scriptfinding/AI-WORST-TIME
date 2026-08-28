@@ -87,7 +87,7 @@ export default function TeamsCard({ teams, members, isWorkspaceAdmin, canCreateT
                     items={selectedTeams.map(team => ({
                         id: team.id,
                         title: team.name,
-                        subtitle: `${team.users.length} member${team.users.length === 1 ? '' : 's'} · ${team.flows_count ?? 0} flow${team.flows_count === 1 ? '' : 's'}`,
+                        subtitle: `${team.users.length} member${team.users.length === 1 ? '' : 's'}, ${team.flows_count ?? 0} flow${team.flows_count === 1 ? '' : 's'}`,
                         icon: (
                             <S.DeleteTeamIcon>
                                 <Icon icon="lucide:users-round" width={13} height={13} />

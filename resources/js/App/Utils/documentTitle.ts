@@ -11,7 +11,7 @@ export function formatDocumentTitle(title?: string | null, appTitle = APP_TITLE)
         return normalizedAppTitle;
     }
 
-    return `${normalized} · ${normalizedAppTitle}`;
+    return `${normalized} - ${normalizedAppTitle}`;
 }
 
 // Applies the branded browser title whenever a page title changes.

@@ -69,7 +69,7 @@ export default function RunFooter({ run, isActive, isFinished, isWaitingHuman, t
                 <S.RunDetailMetaItem>
                     <Icon icon="lucide:user" width={12} height={12} />
                     {run.triggered_by_user
-                        ? `${run.trigger_type === 'api' ? 'Api · ' : ''}by ${ucfirst(run.triggered_by_user.name)}`
+                        ? `${run.trigger_type === 'api' ? 'API run ' : ''}by ${ucfirst(run.triggered_by_user.name)}`
                         : ucfirst(run.trigger_type)}
                 </S.RunDetailMetaItem>
             </S.RunDetailMeta>

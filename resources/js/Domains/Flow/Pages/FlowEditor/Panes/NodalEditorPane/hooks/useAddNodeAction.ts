@@ -15,9 +15,9 @@ import {
 } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/catalog';
 import {
     collectDownstreamNodeIds,
-    edgeConflictsWithHandles,
+    connectEdgeWithStructuredJoins,
     getEdgeInsertionLayout,
-    hasAvailableHandlesForEdge,
+    insertNodeIntoEdge,
 } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/edges';
 import { snapCanvasPoint } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/grid';
 import { EMPTY_FUNCTION_ARGUMENTS } from '@/Domains/Flow/Pages/FlowEditor/Panes/NodalEditorPane/utils/functionArguments';
@@ -75,7 +75,6 @@ export function useAddNodeAction({
 }: UseAddNodeActionOptions) {
     return useCallback((entry: HelpEntryDef) => {
         if (readOnly) return;
-        recordHistory();
         const rect = canvasRef.current?.getBoundingClientRect();
         const centerX = rect ? rect.width / 2 : 360;
         const centerY = rect ? rect.height / 2 : 240;
@@ -139,6 +138,7 @@ export function useAddNodeAction({
                 callArguments: [],
             };
 
+            recordHistory();
             setNodes(current => [...current, functionNode]);
             setPickerOpen(false);
             setPendingConnectionTarget(null);
@@ -168,7 +168,44 @@ export function useAddNodeAction({
             scopeId: edgeSourceNode?.scopeId ?? edgeTargetNode?.scopeId ?? connectionNode?.scopeId,
         };
         const newNodeOutputPort = getNodeOutputPorts(entry.name, entry)[0]?.id ?? DEFAULT_OUTPUT_PORT;
+        let preparedEdges: CanvasEdge[] | null = null;
 
+        if (pendingEdgeInsertion) {
+            preparedEdges = insertNodeIntoEdge(
+                [...nodes, newNode],
+                edges,
+                { ...pendingEdgeInsertion, id: pendingEdgeInsertion.edgeId },
+                newNodeId,
+                newNodeOutputPort,
+            );
+        } else if (pendingConnectionTarget) {
+            const sourceNodeId = pendingConnectionTarget.fromSide === 'output'
+                ? pendingConnectionTarget.fromNodeId
+                : newNodeId;
+            const targetNodeId = pendingConnectionTarget.fromSide === 'output'
+                ? newNodeId
+                : pendingConnectionTarget.fromNodeId;
+            const sourcePort = pendingConnectionTarget.fromSide === 'output'
+                ? pendingConnectionTarget.fromPort
+                : newNodeOutputPort;
+            const targetPort = pendingConnectionTarget.fromSide === 'output'
+                ? DEFAULT_INPUT_PORT
+                : pendingConnectionTarget.fromPort;
+            preparedEdges = connectEdgeWithStructuredJoins(
+                [...nodes, newNode],
+                edges,
+                {
+                    id: `${sourceNodeId}:${sourcePort}->${targetNodeId}:${targetPort}`,
+                    sourceNodeId,
+                    targetNodeId,
+                    sourcePort,
+                    targetPort,
+                },
+            );
+        }
+        if ((pendingEdgeInsertion || pendingConnectionTarget) && preparedEdges === edges) return;
+
+        recordHistory();
         setNodes(current => {
             const nextCurrent = pendingEdgeInsertion
                 ? current.map(node => {
@@ -191,82 +228,7 @@ export function useAddNodeAction({
                 },
             ];
         });
-
-        if (pendingEdgeInsertion) {
-            setEdges(current => {
-                const sourcePort = pendingEdgeInsertion.sourcePort ?? DEFAULT_OUTPUT_PORT;
-                const targetPort = pendingEdgeInsertion.targetPort ?? DEFAULT_INPUT_PORT;
-                const nextEdges = current.filter(edge => edge.id !== pendingEdgeInsertion.edgeId);
-                if (
-                    !hasAvailableHandlesForEdge(
-                        current,
-                        pendingEdgeInsertion.sourceNodeId,
-                        sourcePort,
-                        newNodeId,
-                        DEFAULT_INPUT_PORT,
-                        pendingEdgeInsertion.edgeId,
-                    )
-                    || !hasAvailableHandlesForEdge(
-                        nextEdges,
-                        newNodeId,
-                        newNodeOutputPort,
-                        pendingEdgeInsertion.targetNodeId,
-                        targetPort,
-                    )
-                ) return current;
-
-                return [
-                    ...nextEdges,
-                    {
-                        id: `${pendingEdgeInsertion.sourceNodeId}:${sourcePort}->${newNodeId}:${DEFAULT_INPUT_PORT}`,
-                        sourceNodeId: pendingEdgeInsertion.sourceNodeId,
-                        targetNodeId: newNodeId,
-                        sourcePort,
-                        targetPort: DEFAULT_INPUT_PORT,
-                    },
-                    {
-                        id: `${newNodeId}:${newNodeOutputPort}->${pendingEdgeInsertion.targetNodeId}:${targetPort}`,
-                        sourceNodeId: newNodeId,
-                        targetNodeId: pendingEdgeInsertion.targetNodeId,
-                        sourcePort: newNodeOutputPort,
-                        targetPort,
-                    },
-                ];
-            });
-        } else if (pendingConnectionTarget) {
-            const sourceNodeId = pendingConnectionTarget.fromSide === 'output'
-                ? pendingConnectionTarget.fromNodeId
-                : newNodeId;
-            const targetNodeId = pendingConnectionTarget.fromSide === 'output'
-                ? newNodeId
-                : pendingConnectionTarget.fromNodeId;
-            const sourcePort = pendingConnectionTarget.fromSide === 'output'
-                ? pendingConnectionTarget.fromPort
-                : newNodeOutputPort;
-            const targetPort = pendingConnectionTarget.fromSide === 'output'
-                ? DEFAULT_INPUT_PORT
-                : pendingConnectionTarget.fromPort;
-
-            setEdges(current => {
-                const candidateEdges = [
-                    ...current.filter(edge => !edgeConflictsWithHandles(
-                    edge,
-                    sourceNodeId,
-                    sourcePort,
-                    targetNodeId,
-                    targetPort,
-                    )),
-                    {
-                        id: `${sourceNodeId}:${sourcePort}->${targetNodeId}:${targetPort}`,
-                        sourceNodeId,
-                        targetNodeId,
-                        sourcePort,
-                        targetPort,
-                    },
-                ];
-                return candidateEdges;
-            });
-        }
+        if (preparedEdges) setEdges(preparedEdges);
 
         setPickerOpen(false);
         setPendingConnectionTarget(null);
