@@ -13,6 +13,7 @@ export const RunItemHeader = styled.div`
     align-items: center;
     gap: 8px;
     padding: 8px 10px;
+    border-radius: inherit;
     cursor: pointer;
     transition: background ${({ theme }) => theme.transition.fast};
 
